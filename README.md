@@ -1,4 +1,5 @@
-# Onde Infra
+<img width="1100" height="611" alt="infra 아키텍처 설계도 " src="https://github.com/user-attachments/assets/34d6f6ba-b76b-484f-9cf3-34871aeec677" /># Onde Infra
+
 
 - SK쉴더스 루키즈 개발 5기 최종 프로젝트 LBS 기반 여행 예약 및 동행 커뮤니티 플랫폼 Onde 서비스를 AWS 기반으로 배포하기 위한 인프라 레포입니다. Terraform으로 AWS 리소스를 구성하고, Kubernetes manifest와 Argo CD를 통해 EC2 위에 프론트엔드/백엔드 애플리케이션을 배포하는 구조입니다.
 
@@ -26,6 +27,8 @@ Route53 + ACM: macta.store 도메인과 HTTPS 인증서 연결
 ---
 
 ## 전체 구조
+
+<img width="1100" height="611" alt="infra 아키텍처 설계도 " src="https://github.com/user-attachments/assets/b4b51862-e9fd-4675-8cf4-4da987c1891a" />
 
 ---
 
