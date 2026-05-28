@@ -1,5 +1,5 @@
 # 1단계: 빌드 (Node.js 사용)
-FROM node:18-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
 # 라이브러리 설치 단계 캐싱 (package.json 사용)
