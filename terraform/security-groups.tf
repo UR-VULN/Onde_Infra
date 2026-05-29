@@ -75,16 +75,24 @@ resource "aws_security_group" "frontend_ec2" { # 프론트엔드 EC2 방화벽
 
 resource "aws_security_group" "backend_ec2" {
   name        = "${var.project_name}-sg-backend"
-  # 백엔드 EC2는 프론트엔드 EC2에서 들어오는 트래픽과 RDS/Redis로 나가는 트래픽을 허용하도록 설정
+  # 백엔드 EC2는 프론트엔드 EC2 및 ALB에서 들어오는 트래픽과 RDS/Redis로 나가는 트래픽을 허용하도록 설정
   description = "Backend EC2 security group for API servers and database/cache access"
   vpc_id      = aws_vpc.main.id
 
-  ingress { # 백엔드 EC2는 프론트엔드 EC2에서 8080번 포트로 들어오는 트래픽을 허용하도록 설정 (예: Spring Boot API 서버)
+  ingress { # 프론트엔드 EC2 -> 백엔드 EC2
     description     = "Allow frontend EC2 to connect to backend API"
     from_port       = 8080
     to_port         = 8080
     protocol        = "tcp"
-    security_groups = [aws_security_group.frontend_ec2.id] # 프론트엔드 EC2의 보안 그룹을 참조하여 허용
+    security_groups = [aws_security_group.frontend_ec2.id]
+  }
+
+  ingress { # ALB -> 백엔드 EC2 (직접 라우팅용 추가)
+    description     = "Allow ALB to connect to backend API"
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
   }
 
   egress {

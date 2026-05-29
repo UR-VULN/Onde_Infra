@@ -39,14 +39,18 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 # ────────────────────────────────────────────────────────────────────────────
 # AMI Data Source (최신 Amazon Linux 2023 자동 조회)
 # ────────────────────────────────────────────────────────────────────────────
-
-data "aws_ami" "al2023" {
+data "aws_ami" "ubuntu" {
   most_recent = true
-  owners      = ["amazon"]
+  owners      = ["099720109477"] # 우분투 공식 배포처(Canonical) 고유 ID
 
   filter {
     name   = "name"
-    values = ["al2023-ami-2023*-x86_64"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
   }
 }
 
@@ -56,18 +60,18 @@ data "aws_ami" "al2023" {
 
 # 1. Frontend EC2 (Nginx) - 프라이빗 서브넷 배치, ALB를 통해서만 접근
 resource "aws_instance" "frontend" {
-  ami                  = data.aws_ami.al2023.id
+  ami                  = data.aws_ami.ubuntu.id
   instance_type        = "t3.micro"
   subnet_id            = aws_subnet.public[0].id # 첫 번째 퍼블릭 서브넷
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
   vpc_security_group_ids = [aws_security_group.frontend_ec2.id]
 
   user_data = <<-EOF
-              #!/bin/bash
-              dnf update -y
-              dnf install -y nginx
-              systemctl enable --now nginx
-              EOF
+            #!/bin/bash
+            apt-get update -y
+            apt-get install -y nginx
+            systemctl enable --now nginx
+            EOF
 
   tags = {
     Name = "${var.project_name}-frontend"
@@ -102,10 +106,10 @@ resource "aws_instance" "backend_2" {
   vpc_security_group_ids = [aws_security_group.backend_ec2.id]
 
   user_data = <<-EOF
-              #!/bin/bash
-              dnf update -y
-              dnf install -y java-17-amazon-corretto-devel
-              EOF
+            #!/bin/bash
+            apt-get update -y
+            apt-get install -y openjdk-17-jdk
+            EOF
 
   tags = {
     Name = "${var.project_name}-backend-2"
