@@ -42,7 +42,8 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 
 data "aws_ami" "ubuntu" {
   most_recent = true
-  owners      = ["099720109477"] # Canonical (Ubuntu 공식 배포처 ID)
+  owners      = ["099720109477"] # 우분투 공식 배포처(Canonical) 고유 ID
+
   filter {
     name   = "name"
     values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
