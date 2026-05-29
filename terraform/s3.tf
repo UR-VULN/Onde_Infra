@@ -32,7 +32,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "travel_image" {
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.s3_key.arn
     }
   }
 }
@@ -65,7 +66,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "eticket" {
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.s3_key.arn
     }
   }
 }
@@ -79,6 +81,15 @@ resource "aws_s3_bucket_versioning" "travel_image" {
     status = "Enabled"
   }
 }
+
+resource "aws_s3_bucket_versioning" "eticket" {
+  bucket = aws_s3_bucket.eticket.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
 
 # # 오래된 버전 자동 삭제 (30일 이후 비현재 버전 만료)
 # resource "aws_s3_bucket_lifecycle_configuration" "app" {
