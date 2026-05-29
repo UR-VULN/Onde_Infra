@@ -118,3 +118,59 @@ resource "aws_s3_bucket_versioning" "eticket" {
 #     max_age_seconds = 3000
 #   }
 # }
+
+#────────────────────────────────────────────────────────────────────────────
+# CloudTrail 전용 로그 버킷
+#────────────────────────────────────────────────────────────────────────────
+resource "aws_s3_bucket" "cloudtrail_logs" {
+  bucket = "onde-cloudtrail-logs-bucket"
+
+  tags = {
+    Name    = "onde-cloudtrail-logs"
+    Project = "onde"
+  }
+}
+
+# 퍼블릭 접근 차단
+resource "aws_s3_bucket_public_access_block" "cloudtrail_logs" {
+  bucket = aws_s3_bucket.cloudtrail_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# CloudTrail이 S3에 로그 쓸 수 있도록 버킷 정책 설정
+resource "aws_s3_bucket_policy" "cloudtrail_logs" {
+  bucket = aws_s3_bucket.cloudtrail_logs.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AWSCloudTrailAclCheck"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudtrail.amazonaws.com"
+        }
+        Action   = "s3:GetBucketAcl"
+        Resource = aws_s3_bucket.cloudtrail_logs.arn
+      },
+      {
+        Sid    = "AWSCloudTrailWrite"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudtrail.amazonaws.com"
+        }
+        Action   = "s3:PutObject"
+        Resource = "${aws_s3_bucket.cloudtrail_logs.arn}/AWSLogs/*"
+        Condition = {
+          StringEquals = {
+            "s3:x-amz-acl" = "bucket-owner-full-control"
+          }
+        }
+      }
+    ]
+  })
+}
