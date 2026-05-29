@@ -1,45 +1,94 @@
-<<<<<<< Updated upstream
-# 첫 번째 인스턴스
-resource "aws_instance" "public_server" {
-  ami           = "ami-0d4c056a16f3ae150" # 팀원이 사용한 AMI ID
-  instance_type = "t3.micro"
-  subnet_id     = aws_subnet.public[1].id # 실제 위치가 2a면 [0], 2c면 [1]
-  vpc_security_group_ids = ["sg-0fcfdf6de02bb46f5"]
-  key_name      = "my-bastion-key"
-  
-  tags = { Name = "Bastion-Jump-Host" }
+# ────────────────────────────────────────────────────────────────────────────
+# IAM Role & Instance Profile for SSM (Keyless Access)
+# ────────────────────────────────────────────────────────────────────────────
+
+# EC2 인스턴스가 SSM 서비스를 사용할 수 있도록 허용하는 역할
+resource "aws_iam_role" "ec2_ssm_role" {
+  name = "${var.project_name}-ec2-ssm-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.project_name}-ec2-ssm-role"
+  }
 }
 
-# 두 번째 인스턴스
-resource "aws_instance" "private_server" {
-  ami           = "ami-0d4c056a16f3ae150" # 팀원이 사용한 AMI ID (같을 수도 있음)
-  instance_type = "t2.micro"
-  subnet_id     = aws_subnet.private[0].id
-  vpc_security_group_ids = ["sg-057f09b2ce8c30ef5"]
-  key_name      = "my-bastion-key"
-  
-  tags = { Name = "Team01-Backend-New" }
+# AWS 관리형 정책 연결: SSM Session Manager 접속에 필수적인 권한
+resource "aws_iam_role_policy_attachment" "ssm_managed_core" {
+  role       = aws_iam_role.ec2_ssm_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" # SSM 세션 매니저를 통한 인스턴스 관리 권한
 }
-=======
-# # 첫 번째 인스턴스
-# resource "aws_instance" "public_server" {
-#   ami           = "ami-0d4c056a16f3ae150" # 팀원이 사용한 AMI ID
-#   instance_type = "t3.micro"
-#   subnet_id     = aws_subnet.public[1].id # 실제 위치가 2a면 [0], 2c면 [1]
-#   vpc_security_group_ids = ["sg-0fcfdf6de02bb46f5"]
-#   key_name      = "my-bastion-key"
-  
-#   tags = { Name = "Bastion-Jump-Host" }
-# }
 
-# # 두 번째 인스턴스
-# resource "aws_instance" "private_server" {
-#   ami           = "ami-0d4c056a16f3ae150" # 팀원이 사용한 AMI ID (같을 수도 있음)
-#   instance_type = "t2.micro"
-#   subnet_id     = aws_subnet.private[0].id
-#   vpc_security_group_ids = ["sg-057f09b2ce8c30ef5"]
-#   key_name      = "my-bastion-key"
-  
-#   tags = { Name = "Team01-Backend-New" }
-# }
->>>>>>> Stashed changes
+# EC2 인스턴스에 부착할 프로파일
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "${var.project_name}-ec2-instance-profile"
+  role = aws_iam_role.ec2_ssm_role.name
+}
+
+# ────────────────────────────────────────────────────────────────────────────
+# AMI Data Source (최신 Amazon Linux 2023 자동 조회)
+# ────────────────────────────────────────────────────────────────────────────
+
+data "aws_ami" "al2023" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-2023*-x86_64"]
+  }
+}
+
+# ────────────────────────────────────────────────────────────────────────────
+# EC2 Instances (Frontend & Backend)
+# ────────────────────────────────────────────────────────────────────────────
+
+# 1. Frontend EC2 (Nginx) - 프라이빗 서브넷 배치, ALB를 통해서만 접근
+resource "aws_instance" "frontend" {
+  ami                  = data.aws_ami.al2023.id
+  instance_type        = "t3.micro"
+  subnet_id            = aws_subnet.public[0].id # 첫 번째 퍼블릭 서브넷
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
+  vpc_security_group_ids = [aws_security_group.frontend_ec2.id]
+
+  user_data = <<-EOF
+              #!/bin/bash
+              dnf update -y
+              dnf install -y nginx
+              systemctl enable --now nginx
+              EOF
+
+  tags = {
+    Name = "${var.project_name}-frontend"
+  }
+}
+
+# 2. Backend EC2 (Spring Boot) - 프라이빗 서브넷 배치, 프론트엔드를 통해서만 접근
+resource "aws_instance" "backend" {
+  ami                  = data.aws_ami.al2023.id
+  instance_type        = "t3.medium" # Java 애플리케이션 권장 사양
+  subnet_id            = aws_subnet.private[0].id # 첫 번째 프라이빗 서브넷 (HA 고려)
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
+  vpc_security_group_ids = [aws_security_group.backend_ec2.id]
+
+  user_data = <<-EOF
+              #!/bin/bash
+              dnf update -y
+              dnf install -y java-17-amazon-corretto-devel
+              EOF
+
+  tags = {
+    Name = "${var.project_name}-backend"
+  }
+}

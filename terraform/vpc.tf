@@ -74,26 +74,6 @@ resource "aws_route_table_association" "database" {
 }
 
 # ────────────────────────────────────────────────────────────────────────────
-# redis 서브넷 
-# ────────────────────────────────────────────────────────────────────────────
-resource "aws_subnet" "redis" {
-  count             = 2
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = var.redis_subnet_cidrs[count.index] 
-  availability_zone = var.availability_zones[count.index]
-
-  tags = {
-    Name = "${var.project_name}-redis-subnet-${count.index + 1}"
-  }
-}
-
-resource "aws_route_table_association" "redis_to_db_rt" {
-  count          = length(aws_subnet.redis)
-  subnet_id      = aws_subnet.redis[count.index].id
-  route_table_id = aws_route_table.database.id
-}
-
-# ────────────────────────────────────────────────────────────────────────────
 # 인터넷 게이트웨이 (퍼블릭 서브넷 → 인터넷)
 # ────────────────────────────────────────────────────────────────────────────
 

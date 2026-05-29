@@ -112,10 +112,3 @@ variable "db_password" {
   sensitive   = true # terraform output 및 로그에 출력되지 않음
 }
 
-# ── REDIS ──────────────────────────────────────────────────────────────────
-
-variable "redis_subnet_cidrs" {
-  description = "Redis 서브넷 CIDR 목록"
-  type        = list(string)
-  default     = ["10.0.30.0/24", "10.0.40.0/24"]
-}

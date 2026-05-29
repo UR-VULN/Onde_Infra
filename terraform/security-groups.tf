@@ -84,7 +84,7 @@ resource "aws_security_group" "backend_ec2" {
     from_port       = 8080
     to_port         = 8080
     protocol        = "tcp"
-    security_groups = [aws_security_group.frontend_ec2.id]
+    security_groups = [aws_security_group.frontend_ec2.id] # 프론트엔드 EC2의 보안 그룹을 참조하여 허용
   }
 
   egress {
@@ -110,7 +110,7 @@ resource "aws_security_group" "rds" { # RDS 방화벽
     from_port       = 3306
     to_port         = 3306
     protocol        = "tcp"
-    security_groups = [aws_security_group.backend_ec2.id]
+    security_groups = [aws_security_group.backend_ec2.id] # 백엔드 EC2의 보안 그룹을 참조하여 허용
   }
 
   egress {
