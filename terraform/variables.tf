@@ -86,3 +86,4 @@ variable "db_password" {
   type        = string
   sensitive   = true # terraform output 및 로그에 출력되지 않음
 }
+
