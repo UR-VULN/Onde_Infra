@@ -2,6 +2,7 @@
 resource "aws_cloudwatch_log_group" "cloudtrail" {
   name              = "/aws/cloudtrail/onde"
   retention_in_days = 90
+  kms_key_id        = aws_kms_key.cloudwatch_key.arn
 
   tags = {
     Name    = "onde-cloudtrail-logs"
@@ -55,7 +56,7 @@ resource "aws_cloudtrail" "onde_trail" {
   enable_log_file_validation    = true
 
   # KMS 암호화 적용
-  kms_key_id = aws_kms_key.s3_key.arn
+  kms_key_id = aws_kms_key.cloudtrail_key.arn
 
   # CloudWatch Logs 연동
   cloud_watch_logs_group_arn = "${aws_cloudwatch_log_group.cloudtrail.arn}:*"

@@ -37,7 +37,7 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 }
 
 # ────────────────────────────────────────────────────────────────────────────
-# AMI Data Source (최신 Amazon Linux 2023 자동 조회)
+# AMI Data Source (우분투 22.04  조회)
 # ────────────────────────────────────────────────────────────────────────────
 
 data "aws_ami" "ubuntu" {
@@ -57,7 +57,7 @@ data "aws_ami" "ubuntu" {
 # EC2 Instances (Frontend & Backend)
 # ────────────────────────────────────────────────────────────────────────────
 
-# 1. Frontend EC2 (Nginx) - 프라이빗 서브넷 배치, ALB를 통해서만 접근
+# 1. Frontend EC2 (Nginx) - 퍼블릭 서브넷 배치, ALB를 통해서만 접근
 resource "aws_instance" "frontend" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t3.small"
