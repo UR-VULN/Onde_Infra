@@ -74,12 +74,31 @@ resource "aws_instance" "frontend" {
   }
 }
 
-# 2. Backend EC2 (Spring Boot) - 프라이빗 서브넷 배치, 프론트엔드를 통해서만 접근
-resource "aws_instance" "backend" {
-  ami                  = data.aws_ami.al2023.id
-  instance_type        = "t3.medium" # Java 애플리케이션 권장 사양
-  subnet_id            = aws_subnet.private[0].id # 첫 번째 프라이빗 서브넷 (HA 고려)
-  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
+# 2. Backend EC2 #1 (Spring Boot) - 첫 번째 프라이빗 서브넷
+resource "aws_instance" "backend_1" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t3.small"               # Java 애플리케이션 권장 사양
+  subnet_id              = aws_subnet.private[0].id # 첫 번째 프라이빗 서브넷
+  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
+  vpc_security_group_ids = [aws_security_group.backend_ec2.id]
+
+  user_data = <<-EOF
+              #!/bin/bash
+              apt-get update -y
+              apt-get install -y openjdk-17-jdk
+              EOF
+
+  tags = {
+    Name = "${var.project_name}-backend-1"
+  }
+}
+
+# 3. Backend EC2 #2 (Spring Boot) - 두 번째 프라이빗 서브넷 (HA 분산)
+resource "aws_instance" "backend_2" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t3.small"
+  subnet_id              = aws_subnet.private[1].id # 두 번째 프라이빗 서브넷
+  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
   vpc_security_group_ids = [aws_security_group.backend_ec2.id]
 
   user_data = <<-EOF
@@ -89,6 +108,6 @@ resource "aws_instance" "backend" {
               EOF
 
   tags = {
-    Name = "${var.project_name}-backend"
+    Name = "${var.project_name}-backend-2"
   }
 }
