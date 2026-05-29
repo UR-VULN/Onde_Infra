@@ -26,6 +26,7 @@ output "database_subnet_ids" {
   value       = aws_subnet.database[*].id
 }
 
+<<<<<<< Updated upstream
 # ── EKS ────────────────────────────────────────────────────────────────────
 
 output "eks_cluster_name" {
@@ -101,6 +102,56 @@ output "s3_uploads_bucket_arn" {
   description = "업로드 버킷 ARN (IAM 정책에서 참조)"
   value       = aws_s3_bucket.app.arn
 }
+=======
+
+
+# ── ECR ────────────────────────────────────────────────────────────────────
+
+# output "ecr_backend_repository_url" {
+#   description = "백엔드 ECR 레포지토리 URL (docker push 시 사용)"
+#   value       = aws_ecr_repository.backend.repository_url
+# }
+
+# output "ecr_frontend_repository_url" {
+#   description = "프론트엔드 ECR 레포지토리 URL"
+#   value       = aws_ecr_repository.frontend.repository_url
+# }
+
+# # ECR 로그인 명령어 안내
+# output "ecr_login_command" {
+#   description = "ECR 도커 로그인 명령어"
+#   value       = "aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${aws_ecr_repository.backend.repository_url}"
+# }
+
+# ── RDS ────────────────────────────────────────────────────────────────────
+
+# output "rds_endpoint" {
+#   description = "RDS 엔드포인트 (애플리케이션 DB 연결 주소)"
+#   value       = aws_db_instance.main.endpoint
+# }
+
+# output "rds_port" {
+#   description = "RDS 포트"
+#   value       = aws_db_instance.main.port
+# }
+
+# output "rds_database_name" {
+#   description = "RDS 초기 데이터베이스 이름"
+#   value       = aws_db_instance.main.db_name
+# }
+
+# ── S3 ─────────────────────────────────────────────────────────────────────
+
+# output "s3_uploads_bucket_name" {
+#   description = "업로드 버킷 이름"
+#   value       = aws_s3_bucket.app.bucket
+# }
+
+# output "s3_uploads_bucket_arn" {
+#   description = "업로드 버킷 ARN (IAM 정책에서 참조)"
+#   value       = aws_s3_bucket.app.arn
+# }
+>>>>>>> Stashed changes
 
 # ── LBC ────────────────────────────────────────────────────────────────────
 

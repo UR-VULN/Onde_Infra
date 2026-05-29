@@ -31,7 +31,7 @@ variable "public_subnet_cidrs" {
 }
 
 variable "private_subnet_cidrs" {
-  description = "프라이빗 서브넷 CIDR 목록 (EKS 노드 배치)"
+  description = "프라이빗 서브넷 CIDR 목록 (EC2 노드 배치)"
   type        = list(string)
   default     = ["10.0.10.0/24", "10.0.20.0/24"]
 }
@@ -39,46 +39,46 @@ variable "private_subnet_cidrs" {
 variable "availability_zones" {
   description = "가용 영역 목록 (서브넷 수와 일치해야 함)"
   type        = list(string)
-  default     = ["ap-northeast-2a", "ap-northeast-2c"]
+  default     = ["ap-northeast-2a", "ap-northeast-2c"] # 가용성을 나누기 위한 
 }
 
-# ── EKS ────────────────────────────────────────────────────────────────────
+# # ── EKS ────────────────────────────────────────────────────────────────────
 
-variable "kubernetes_version" {
-  description = "EKS 쿠버네티스 버전"
-  type        = string
-  default     = "1.32"
-}
+# variable "kubernetes_version" {
+#   description = "EKS 쿠버네티스 버전"
+#   type        = string
+#   default     = "1.32"
+# }
 
-variable "node_instance_type" {
-  description = "워커 노드 EC2 인스턴스 타입"
-  type        = string
-  default     = "t3.medium"
-}
+# variable "node_instance_type" {
+#   description = "워커 노드 EC2 인스턴스 타입"
+#   type        = string
+#   default     = "t3.medium"
+# }
 
-variable "node_desired_size" {
-  description = "노드 그룹 희망 노드 수"
-  type        = number
-  default     = 2
-}
+# variable "node_desired_size" {
+#   description = "노드 그룹 희망 노드 수"
+#   type        = number
+#   default     = 2
+# }
 
-variable "node_min_size" {
-  description = "노드 그룹 최소 노드 수"
-  type        = number
-  default     = 1
-}
+# variable "node_min_size" {
+#   description = "노드 그룹 최소 노드 수"
+#   type        = number
+#   default     = 1
+# }
 
-variable "node_max_size" {
-  description = "노드 그룹 최대 노드 수"
-  type        = number
-  default     = 4
-}
+# variable "node_max_size" {
+#   description = "노드 그룹 최대 노드 수"
+#   type        = number
+#   default     = 4
+# }
 
-variable "nodes_on" {
-  description = "노드 그룹 활성화 여부 (true: 시작, false: 종료)"
-  type        = bool
-  default     = true
-}
+# variable "nodes_on" {
+#   description = "노드 그룹 활성화 여부 (true: 시작, false: 종료)"
+#   type        = bool
+#   default     = true
+# }
 
 # ── RDS ────────────────────────────────────────────────────────────────────
 

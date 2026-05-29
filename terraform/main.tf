@@ -17,6 +17,7 @@ locals {
     Environment = var.environment
     ManagedBy   = "Terraform"
   }
+<<<<<<< Updated upstream
 
   # S3 버킷 ARN 목록 (eks.tf의 IAM 정책에서 와일드카드 * 대신 사용)
   # s3.tf가 먼저 적용된 이후에 참조 가능
@@ -24,6 +25,8 @@ locals {
     aws_s3_bucket.app.arn,
     "${aws_s3_bucket.app.arn}/*",
   ]
+=======
+>>>>>>> Stashed changes
 }
 
 # ── 현재 AWS 계정 정보 조회 ─────────────────────────────────────────────────

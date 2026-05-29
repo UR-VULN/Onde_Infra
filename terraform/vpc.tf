@@ -3,9 +3,9 @@
 # ────────────────────────────────────────────────────────────────────────────
 
 resource "aws_vpc" "main" {
-  cidr_block           = var.vpc_cidr
-  enable_dns_support   = true
-  enable_dns_hostnames = true # EKS 노드가 DNS로 서로를 찾기 위해 필요
+  cidr_block           = var.vpc_cidr   # 전체 IP 범위
+  enable_dns_support   = true   # 이 VPC 내 인스턴스가 AWS DNS 이름 사용 가능 
+  enable_dns_hostnames = true # EC2/RDS 등이 Private DNS로 서로를 찾기 위해 필요
 
   tags = {
     Name = "${var.project_name}-vpc"
@@ -14,8 +14,7 @@ resource "aws_vpc" "main" {
 
 # ────────────────────────────────────────────────────────────────────────────
 # 퍼블릭 서브넷 (인터넷 게이트웨이 → 외부 접근 가능, ALB 배치)
-# EKS 태그: kubernetes.io/role/elb = "1" → AWS Load Balancer Controller가
-#           퍼블릭 서브넷에 인터넷 facing ALB를 자동 생성할 때 사용
+# 용도: ALB, Nginx (프론트엔드 EC2)
 # ────────────────────────────────────────────────────────────────────────────
 
 resource "aws_subnet" "public" {
@@ -23,19 +22,16 @@ resource "aws_subnet" "public" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.public_subnet_cidrs[count.index]
   availability_zone = var.availability_zones[count.index]
-
-  map_public_ip_on_launch = true # 퍼블릭 서브넷 인스턴스에 공인 IP 자동 할당
+  map_public_ip_on_launch = true
 
   tags = {
-    Name                                            = "${var.project_name}-public-${count.index + 1}"
-    "kubernetes.io/cluster/${var.project_name}-eks" = "shared"
-    "kubernetes.io/role/elb"                        = "1"
+    Name = "${var.project_name}-public-${count.index + 1}"
   }
 }
 
 # ────────────────────────────────────────────────────────────────────────────
-# 프라이빗 서브넷 (NAT 게이트웨이 경유, EKS 워커 노드 배치)
-# EKS 태그: kubernetes.io/role/internal-elb = "1" → 내부 ALB용
+# 프라이빗 서브넷 (NAT 게이트웨이 경유, 백엔드 EC2 배치)
+# 용도: Spring Boot Backend (Linux/Windows), 내부 서비스
 # ────────────────────────────────────────────────────────────────────────────
 
 resource "aws_subnet" "private" {
@@ -45,9 +41,7 @@ resource "aws_subnet" "private" {
   availability_zone = var.availability_zones[count.index]
 
   tags = {
-    Name                                            = "${var.project_name}-private-${count.index + 1}"
-    "kubernetes.io/cluster/${var.project_name}-eks" = "shared"
-    "kubernetes.io/role/internal-elb"               = "1"
+    Name = "${var.project_name}-private-${count.index + 1}"
   }
 }
 

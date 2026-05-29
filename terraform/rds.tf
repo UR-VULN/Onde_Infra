@@ -8,6 +8,7 @@ resource "aws_db_subnet_group" "database" {
   }
 }
 
+<<<<<<< Updated upstream
 # 2. RDS 보안 그룹 (문지기 설정)
 resource "aws_security_group" "rds" {
   name        = "${var.project_name}-rds-sg"
@@ -38,6 +39,9 @@ resource "aws_security_group" "rds" {
 }
 
 # 3. RDS MySQL 인스턴스 생성
+=======
+# 2. RDS MySQL 인스턴스 생성
+>>>>>>> Stashed changes
 resource "aws_db_instance" "main" {
   allocated_storage      = 20
   max_allocated_storage  = 100 # 스토리지 오토스케일링
