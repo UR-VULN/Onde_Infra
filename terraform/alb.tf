@@ -47,7 +47,7 @@ resource "aws_lb_target_group" "backend" {
   vpc_id   = aws_vpc.main.id
 
   health_check {
-    path                = "/actuator/health" # Spring Boot 관례적인 헬스 체크 경로
+    path                = "/api/health" # Spring Boot 관례적인 헬스 체크 경로
     port                = "8080"
     protocol            = "HTTP"
     matcher             = "200"
