@@ -24,11 +24,3 @@ provider "aws" {
     }
   }
 }
-
-terraform {
-  backend "s3" {
-    bucket = "team01-mini-project3-dev-files-805400277714"      # S3 버킷
-    key    = "terraform.tfstate"
-    region = "ap-northeast-2"
-  }
-}

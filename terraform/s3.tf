@@ -1,23 +1,24 @@
 # ────────────────────────────────────────────────────────────────────────────
 # S3 버킷
-# 1. 업로드 버킷: 백엔드가 사용자 파일(이미지, 첨부파일 등)을 저장
-# 2. 정적 파일 버킷: 프론트엔드 빌드 산출물 저장 (CloudFront 연동 시 사용)
+# 1. 이미지용 버킷
+# 2. E-ticket/PDF용 버킷
 # ────────────────────────────────────────────────────────────────────────────
 
-# ── 업로드 버킷 ────────────────────────────────────────────────────────────
-
-resource "aws_s3_bucket" "app" {
-  bucket = "${var.project_name}-${var.environment}-files-${data.aws_caller_identity.current.account_id}"
-  # account_id를 suffix로 붙여 전 세계 고유 버킷 이름 보장
+# ────────────────────────────────────────────────────────────────────────────
+# 이미지용 S3 버킷
+# ────────────────────────────────────────────────────────────────────────────
+resource "aws_s3_bucket" "travel_image" {
+  bucket = var.s3_image_bucket_name
 
   tags = {
-    Name = "${var.project_name}-files"
+    Name    = var.s3_image_bucket_name
+    Project = var.project_name
   }
 }
 
-# 퍼블릭 액세스 완전 차단 (서명된 URL로만 접근)
-resource "aws_s3_bucket_public_access_block" "app" {
-  bucket = aws_s3_bucket.app.id
+# 퍼블릭 접근 차단
+resource "aws_s3_bucket_public_access_block" "travel_image" {
+  bucket = aws_s3_bucket.travel_image.id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -25,12 +26,9 @@ resource "aws_s3_bucket_public_access_block" "app" {
   restrict_public_buckets = true
 }
 
-# 현재 AWS 계정 ID 조회 (버킷 이름 suffix용)
-# data "aws_caller_identity" "current" {}
-
-# 서버 사이드 암호화 (AES-256)
-resource "aws_s3_bucket_server_side_encryption_configuration" "app" {
-  bucket = aws_s3_bucket.app.id
+# 버킷 암호화 (KMS 연동 전 기본 AES256)
+resource "aws_s3_bucket_server_side_encryption_configuration" "travel_image" {
+  bucket = aws_s3_bucket.travel_image.id
 
   rule {
     apply_server_side_encryption_by_default {
@@ -39,41 +37,73 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "app" {
   }
 }
 
+# ────────────────────────────────────────────────────────────────────────────
+# E-ticket/PDF용 S3 버킷
+# ────────────────────────────────────────────────────────────────────────────
+resource "aws_s3_bucket" "eticket" {
+  bucket = var.s3_eticket_bucket_name
+
+  tags = {
+    Name    = var.s3_eticket_bucket_name
+    Project = var.project_name
+  }
+}
+
+# 퍼블릭 접근 차단
+resource "aws_s3_bucket_public_access_block" "eticket" {
+  bucket = aws_s3_bucket.eticket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# 버킷 암호화
+resource "aws_s3_bucket_server_side_encryption_configuration" "eticket" {
+  bucket = aws_s3_bucket.eticket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+
 # 버전 관리 활성화 (실수로 삭제된 파일 복구 가능)
-resource "aws_s3_bucket_versioning" "app" {
-  bucket = aws_s3_bucket.app.id
+resource "aws_s3_bucket_versioning" "travel_image" {
+  bucket = aws_s3_bucket.travel_image.id
 
   versioning_configuration {
     status = "Enabled"
   }
 }
 
-# 오래된 버전 자동 삭제 (30일 이후 비현재 버전 만료)
-resource "aws_s3_bucket_lifecycle_configuration" "app" {
-  bucket = aws_s3_bucket.app.id
+# # 오래된 버전 자동 삭제 (30일 이후 비현재 버전 만료)
+# resource "aws_s3_bucket_lifecycle_configuration" "app" {
+#   bucket = aws_s3_bucket.app.id
 
-  rule {
-    id     = "expire-old-versions"
-    status = "Enabled"
+#   rule {
+#     id     = "expire-old-versions"
+#     status = "Enabled"
 
-    filter {}
+#     filter {}
     
-    noncurrent_version_expiration {
-      noncurrent_days = 30
-    }
-  }
-}
+#     noncurrent_version_expiration {
+#       noncurrent_days = 30
+#     }
+#   }
+# }
 
-# CORS 설정 (브라우저에서 Presigned URL로 직접 업로드 시 필요)
-resource "aws_s3_bucket_cors_configuration" "app" {
-  bucket = aws_s3_bucket.app.id
+# # CORS 설정 (브라우저에서 Presigned URL로 직접 업로드 시 필요)
+# resource "aws_s3_bucket_cors_configuration" "travel_image" {
+#   bucket = aws_s3_bucket.travel_image.id
 
-  cors_rule {
-    allowed_headers = ["*"]
-    allowed_methods = ["GET", "PUT", "POST"]
-    # 운영 환경에서는 실제 도메인으로 제한: ["https://yourdomain.com"]
-    allowed_origins = ["*"]
-    expose_headers  = ["ETag"]
-    max_age_seconds = 3000
-  }
-}
+#   cors_rule {
+#     allowed_headers = ["*"]
+#     allowed_methods = ["GET", "PUT", "POST"]
+#     allowed_origins = ["https://온데-도메인.com"]
+#     max_age_seconds = 3000
+#   }
+# }
