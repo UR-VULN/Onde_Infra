@@ -8,11 +8,12 @@
 #   }
 # }
 
-# # 2. RDS 보안 그룹 (문지기 설정)
-# resource "aws_security_group" "rds" {
-#   name        = "${var.project_name}-rds-sg"
-#   description = "Allow MySQL traffic from EKS nodes only"
-#   vpc_id      = aws_vpc.main.id
+<<<<<<< Updated upstream
+# 2. RDS 보안 그룹 (문지기 설정)
+resource "aws_security_group" "rds" {
+  name        = "${var.project_name}-rds-sg"
+  description = "Allow MySQL traffic from EKS nodes only"
+  vpc_id      = aws_vpc.main.id
 
 #   # 인바운드 규칙: WAS(EKS) 보안 그룹으로부터의 3306 포트만 허용
 #   ingress {
@@ -37,14 +38,17 @@
 #   }
 # }
 
-# # 3. RDS MySQL 인스턴스 생성
-# resource "aws_db_instance" "main" {
-#   allocated_storage      = 20
-#   max_allocated_storage  = 100 # 스토리지 오토스케일링
-#   engine                 = "mysql"
-#   engine_version         = "8.0"
-#   instance_class         = var.db_instance_class 
-#   apply_immediately      = true
+# 3. RDS MySQL 인스턴스 생성
+=======
+# 2. RDS MySQL 인스턴스 생성
+>>>>>>> Stashed changes
+resource "aws_db_instance" "main" {
+  allocated_storage      = 20
+  max_allocated_storage  = 100 # 스토리지 오토스케일링
+  engine                 = "mysql"
+  engine_version         = "8.0"
+  instance_class         = var.db_instance_class 
+  apply_immediately      = true
   
 #   db_name                = var.db_name
 #   username               = var.db_username

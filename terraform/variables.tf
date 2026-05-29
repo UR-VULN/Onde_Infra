@@ -28,6 +28,25 @@ variable "s3_eticket_bucket_name" {
   type        = string
   default     = "onde-eticket-bucket"
 }
+variable "private_subnet_cidrs" {
+  description = "프라이빗 서브넷 CIDR 목록 (EC2 노드 배치)"
+  type        = list(string)
+  default     = ["10.0.10.0/24", "10.0.20.0/24"]
+}
+
+variable "availability_zones" {
+  description = "가용 영역 목록 (서브넷 수와 일치해야 함)"
+  type        = list(string)
+  default     = ["ap-northeast-2a", "ap-northeast-2c"] # 가용성을 나누기 위한 
+}
+
+# # ── EKS ────────────────────────────────────────────────────────────────────
+
+# variable "kubernetes_version" {
+#   description = "EKS 쿠버네티스 버전"
+#   type        = string
+#   default     = "1.32"
+# }
 
 ## ── VPC ────────────────────────────────────────────────────────────────────
 

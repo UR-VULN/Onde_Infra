@@ -2,7 +2,7 @@
 # resource "aws_iam_policy" "lbc_policy" {
 #   name        = "${var.project_name}-lbc-policy"
 #   description = "AWS Load Balancer Controller Policy for EKS"
-  
+
 #   # 같은 폴더에 생성된 iam_policy.json을 읽어옵니다.
 #   policy = file("${path.module}/iam_policy.json")
 # }
