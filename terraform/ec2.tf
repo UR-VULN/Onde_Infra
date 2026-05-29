@@ -40,13 +40,16 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 # AMI Data Source (최신 Amazon Linux 2023 자동 조회)
 # ────────────────────────────────────────────────────────────────────────────
 
-data "aws_ami" "al2023" {
+data "aws_ami" "ubuntu" {
   most_recent = true
-  owners      = ["amazon"]
-
+  owners      = ["099720109477"] # Canonical (Ubuntu 공식 배포처 ID)
   filter {
     name   = "name"
-    values = ["al2023-ami-2023*-x86_64"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
   }
 }
 
@@ -56,16 +59,16 @@ data "aws_ami" "al2023" {
 
 # 1. Frontend EC2 (Nginx) - 프라이빗 서브넷 배치, ALB를 통해서만 접근
 resource "aws_instance" "frontend" {
-  ami                  = data.aws_ami.al2023.id
-  instance_type        = "t3.micro"
-  subnet_id            = aws_subnet.public[0].id # 첫 번째 퍼블릭 서브넷
-  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t3.small"
+  subnet_id              = aws_subnet.public[0].id # 첫 번째 퍼블릭 서브넷
+  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
   vpc_security_group_ids = [aws_security_group.frontend_ec2.id]
 
   user_data = <<-EOF
               #!/bin/bash
-              dnf update -y
-              dnf install -y nginx
+              apt-get update -y
+              apt-get install -y nginx
               systemctl enable --now nginx
               EOF
 
@@ -76,16 +79,16 @@ resource "aws_instance" "frontend" {
 
 # 2. Backend EC2 (Spring Boot) - 프라이빗 서브넷 배치, 프론트엔드를 통해서만 접근
 resource "aws_instance" "backend" {
-  ami                  = data.aws_ami.al2023.id
-  instance_type        = "t3.medium" # Java 애플리케이션 권장 사양
-  subnet_id            = aws_subnet.private[0].id # 첫 번째 프라이빗 서브넷 (HA 고려)
-  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t3.small"               # Java 애플리케이션 권장 사양
+  subnet_id              = aws_subnet.private[0].id # 첫 번째 프라이빗 서브넷 (HA 고려)
+  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
   vpc_security_group_ids = [aws_security_group.backend_ec2.id]
 
   user_data = <<-EOF
               #!/bin/bash
-              dnf update -y
-              dnf install -y java-17-amazon-corretto-devel
+              apt-get update -y
+              apt-get install -y openjdk-17-jdk
               EOF
 
   tags = {
