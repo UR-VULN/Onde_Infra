@@ -114,3 +114,65 @@ resource "aws_instance" "backend_2" {
     Name = "${var.project_name}-backend-2"
   }
 }
+
+# 4. Backend EC2 (Window 서버)
+
+# Windows Server용 보안 그룹 (RDP 접속 및 백엔드 API 연동 허용)
+resource "aws_security_group" "windows_ec2" {
+  name        = "${var.project_name}-sg-windows"
+  description = "Security group for Windows Backend EC2 allowing RDP and backend API access"
+  vpc_id      = aws_vpc.main.id
+
+
+  # 프론트엔드 EC2가 백엔드 8080 포트로 접속하는 것 허용
+  ingress {
+    description     = "Allow frontend EC2 access to backend"
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [aws_security_group.frontend_ec2.id]
+  }
+
+  # 아웃바운드 전체 허용
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-windows-sg"
+  }
+}
+
+# Windows Server 2019 AMI 데이터 소스 정의
+data "aws_ami" "windows_2019" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["Windows_Server-2019-English-Full-Base-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+# Windows Server 2019 인스턴스 생성
+resource "aws_instance" "backend_windows" {
+  ami                    = data.aws_ami.windows_2019.id
+  instance_type          = "t3.medium" # Windows Server 구동을 위한 최소 권장 스펙
+  subnet_id              = aws_subnet.private[0].id # 👈 아키텍처 다이어그램에 따라 프라이빗 서브넷에 배치
+  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
+  vpc_security_group_ids = [aws_security_group.windows_ec2.id]
+
+  tags = {
+    Name = "${var.project_name}-backend-windows"
+  }
+}
+
