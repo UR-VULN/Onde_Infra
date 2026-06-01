@@ -204,8 +204,54 @@ resource "aws_instance" "backend_1" {
 
   user_data = <<-EOF
               #!/bin/bash
+              set -e
+
+              # 1. 패키지 설치
               apt-get update -y
-              apt-get install -y openjdk-17-jdk
+              apt-get install -y openjdk-17-jdk awscli jq
+
+              # 2. 앱 디렉토리 생성
+              mkdir -p /app
+
+              # 3. Secrets Manager에서 값 읽어 실행하는 시작 스크립트 생성
+              cat > /app/start.sh << 'STARTSCRIPT'
+              #!/bin/bash
+              SECRET=$(aws secretsmanager get-secret-value \
+                --secret-id onde-project/backend \
+                --region ap-northeast-2 \
+                --query SecretString \
+                --output text)
+
+              export DB_HOST=$(echo $SECRET | jq -r '.DB_HOST')
+              export DB_PASSWORD=$(echo $SECRET | jq -r '.DB_PASSWORD')
+              export REDIS_HOST=$(echo $SECRET | jq -r '.REDIS_HOST')
+              export TZ=Asia/Seoul
+
+              exec java -jar /app/app.jar
+              STARTSCRIPT
+              chmod +x /app/start.sh
+
+              # 4. systemd 서비스 등록 (GitHub Actions가 JAR 배포 후 재시작)
+              cat > /etc/systemd/system/backend.service << 'SERVICE'
+              [Unit]
+              Description=Spring Boot Backend Application
+              After=network.target
+
+              [Service]
+              Type=simple
+              User=ubuntu
+              ExecStart=/app/start.sh
+              Restart=on-failure
+              RestartSec=10
+              StandardOutput=journal
+              StandardError=journal
+
+              [Install]
+              WantedBy=multi-user.target
+              SERVICE
+
+              systemctl daemon-reload
+              systemctl enable backend
               EOF
 
   tags = {
@@ -223,8 +269,54 @@ resource "aws_instance" "backend_2" {
 
   user_data = <<-EOF
               #!/bin/bash
+              set -e
+
+              # 1. 패키지 설치
               apt-get update -y
-              apt-get install -y openjdk-17-jdk
+              apt-get install -y openjdk-17-jdk awscli jq
+
+              # 2. 앱 디렉토리 생성
+              mkdir -p /app
+
+              # 3. Secrets Manager에서 값 읽어 실행하는 시작 스크립트 생성
+              cat > /app/start.sh << 'STARTSCRIPT'
+              #!/bin/bash
+              SECRET=$(aws secretsmanager get-secret-value \
+                --secret-id onde-project/backend \
+                --region ap-northeast-2 \
+                --query SecretString \
+                --output text)
+
+              export DB_HOST=$(echo $SECRET | jq -r '.DB_HOST')
+              export DB_PASSWORD=$(echo $SECRET | jq -r '.DB_PASSWORD')
+              export REDIS_HOST=$(echo $SECRET | jq -r '.REDIS_HOST')
+              export TZ=Asia/Seoul
+
+              exec java -jar /app/app.jar
+              STARTSCRIPT
+              chmod +x /app/start.sh
+
+              # 4. systemd 서비스 등록 (GitHub Actions가 JAR 배포 후 재시작)
+              cat > /etc/systemd/system/backend.service << 'SERVICE'
+              [Unit]
+              Description=Spring Boot Backend Application
+              After=network.target
+
+              [Service]
+              Type=simple
+              User=ubuntu
+              ExecStart=/app/start.sh
+              Restart=on-failure
+              RestartSec=10
+              StandardOutput=journal
+              StandardError=journal
+
+              [Install]
+              WantedBy=multi-user.target
+              SERVICE
+
+              systemctl daemon-reload
+              systemctl enable backend
               EOF
 
   tags = {
