@@ -91,5 +91,5 @@ variable "db_password" {
 variable "operator_email" {
   description = "운영자 알림 수신 이메일 주소"
   type        = string
-  default     = "your-email@example.com" # 실제 이메일로 교체 필요
+  default     = "your-email@example.com" # TODO: GitHub Secrets의 OPERATOR_EMAIL로 교체 필요
 }

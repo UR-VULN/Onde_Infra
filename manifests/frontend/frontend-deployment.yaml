@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend-deployment
-  namespace: mini-project3
+  namespace: onde-project
   labels:
     app: frontend
 spec:

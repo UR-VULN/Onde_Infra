@@ -17,7 +17,7 @@ output "public_subnet_ids" {
 }
 
 output "private_subnet_ids" {
-  description = "프라이빗 서브넷 ID 목록 (EKS 노드 배치)"
+  description = "프라이빗 서브넷 ID 목록 (EC2 백엔드 배치)"
   value       = aws_subnet.private[*].id
 }
 

@@ -57,9 +57,8 @@ resource "aws_db_instance" "main" {
   publicly_accessible    = false # 외부 접근 차단 (보안 핵심)
 
 
-  # ── KMS 암호화 적용 (kms.tf의 rds_key 참조) ──────────────────────────────
+  # Storage encryption uses the AWS managed/default key.
   storage_encrypted = true
-  kms_key_id        = aws_kms_key.rds_key.arn
   
   tags = {
     Name = "${var.project_name}-rds"
