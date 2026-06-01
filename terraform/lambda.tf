@@ -56,6 +56,18 @@ resource "aws_iam_role_policy" "lambda_sqs_policy" {
         Effect = "Allow"
         Action = "sns:Publish"
         Resource = aws_sns_topic.notification.arn # sns.tf에 정의
+      },
+      {
+        Sid    = "AllowS3ETicketAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject"
+        ]
+        Resource = [
+          "${aws_s3_bucket.eticket.arn}",
+          "${aws_s3_bucket.eticket.arn}/*"
+        ]
       }
     ]
   })
