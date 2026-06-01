@@ -62,29 +62,66 @@ resource "aws_lb_target_group" "backend" {
   }
 }
 
-# 4. 타겟 그룹에 인스턴스 연결
-# 4-1. 프론트엔드 연결
+# 4. Windows 백엔드 타겟 그룹 (Spring Boot on Windows) ── [추가]
+resource "aws_lb_target_group" "backend_windows" {
+  name     = "${var.project_name}-backend-win-tg"
+  port     = 8080
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+
+  health_check {
+    path                = "/api/health"
+    port                = "8080"
+    protocol            = "HTTP"
+    matcher             = "200"
+    interval            = 30
+    timeout             = 10 # Windows는 응답이 상대적으로 느릴 수 있어 timeout 여유 확보
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+  }
+
+  tags = {
+    Name = "${var.project_name}-backend-windows-tg"
+  }
+}
+
+# ────────────────────────────────────────────────────────────────────────────
+# 타겟 그룹 인스턴스 연결
+# ────────────────────────────────────────────────────────────────────────────
+
+# 5-1. 프론트엔드 연결
 resource "aws_lb_target_group_attachment" "frontend" {
   target_group_arn = aws_lb_target_group.frontend.arn
   target_id        = aws_instance.frontend.id
   port             = 80
 }
 
-# 4-2. 백엔드 #1 연결
+# 5-2. Linux 백엔드 #1 연결
 resource "aws_lb_target_group_attachment" "backend_1" {
   target_group_arn = aws_lb_target_group.backend.arn
   target_id        = aws_instance.backend_1.id
   port             = 8080
 }
 
-# 4-3. 백엔드 #2 연결
+# 5-3. Linux 백엔드 #2 연결
 resource "aws_lb_target_group_attachment" "backend_2" {
   target_group_arn = aws_lb_target_group.backend.arn
   target_id        = aws_instance.backend_2.id
   port             = 8080
 }
 
-# 5. HTTP(80) 리스너 및 라우팅 규칙
+# 5-4. Windows 백엔드 연결 ── [추가]
+resource "aws_lb_target_group_attachment" "backend_windows" {
+  target_group_arn = aws_lb_target_group.backend_windows.arn
+  target_id        = aws_instance.backend_windows.id
+  port             = 8080
+}
+
+# ────────────────────────────────────────────────────────────────────────────
+# 리스너 및 라우팅 규칙
+# ────────────────────────────────────────────────────────────────────────────
+
+# 6. HTTP(80) 리스너 — 기본 규칙: 프론트엔드로 전달
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
@@ -97,7 +134,7 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# 5-1. 백엔드 라우팅 규칙 (Path-based Routing): /api/* 요청은 백엔드로 전달
+# 6-1. Linux 백엔드 라우팅 규칙 (Path-based Routing): /api/* 요청은 백엔드로 전달
 resource "aws_lb_listener_rule" "api" {
   listener_arn = aws_lb_listener.http.arn # ALB의 HTTP 리스너 ARN 참조
   priority     = 10 # 기본 규칙보다 높은 우선순위로 설정
@@ -113,3 +150,21 @@ resource "aws_lb_listener_rule" "api" {
     }
   }
 }
+
+# 6-2. Windows 관리자 API 라우팅: /admin/* → Windows 백엔드 TG (priority 20) ── [추가]
+resource "aws_lb_listener_rule" "admin_api" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 20
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.backend_windows.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/admin/*"]
+    }
+  }
+}
+ 

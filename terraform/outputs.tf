@@ -83,11 +83,20 @@ output "s3_eticket_bucket_arn" {
   value       = aws_s3_bucket.eticket.arn
 }
 
-# ── LBC ────────────────────────────────────────────────────────────────────
+# ── Outputs ─────────────────────────────────────────────────────────────────
 
-# lbc_role_arn은 lbc.tf에 이미 output으로 정의되어 있습니다.
-# Helm 설치 시 사용:
-# helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
-#   -n kube-system \
-#   --set clusterName=<eks_cluster_name> \
-#   --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=<lbc_role_arn>
+output "sqs_queue_url" {
+  description = "메인 SQS 큐 URL (Spring Boot application.yml에서 참조)"
+  value       = aws_sqs_queue.main.url
+}
+
+output "sqs_queue_arn" {
+  description = "메인 SQS 큐 ARN"
+  value       = aws_sqs_queue.main.arn
+}
+
+output "sqs_dlq_url" {
+  description = "Dead Letter Queue URL"
+  value       = aws_sqs_queue.dlq.url
+}
+

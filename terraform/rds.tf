@@ -27,8 +27,13 @@ resource "aws_db_instance" "main" {
   
   skip_final_snapshot    = true # 프로젝트 종료 후 삭제 편의를 위함
   multi_az               = false # 비용 절감을 위해 단일 AZ (운영 시 true 권장)
-  publicly_accessible    = false # 외부 접근 차단 (보안 핵심) 나중에 false로 수정
+  publicly_accessible    = false # 외부 접근 차단 (보안 핵심)
 
+
+  # ── KMS 암호화 적용 (kms.tf의 rds_key 참조) ──────────────────────────────
+  storage_encrypted = true
+  kms_key_id        = aws_kms_key.rds_key.arn
+  
   tags = {
     Name = "${var.project_name}-rds"
   }

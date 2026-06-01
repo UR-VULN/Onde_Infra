@@ -13,15 +13,20 @@ resource "aws_elasticache_subnet_group" "main" {
 # ────────────────────────────────────────────────────────────────────────────
 # redis main
 # ────────────────────────────────────────────────────────────────────────────
-resource "aws_elasticache_cluster" "main" {
-  cluster_id           = "${var.project_name}-redis"
-  engine               = "redis"
-  node_type            = "cache.t3.micro" # 프로젝트용 저사양 선택
-  num_cache_nodes      = 1
-  parameter_group_name = "default.redis7" # 엔진 버전 확인
-  port                 = 6379             # Redis 기본 포트
-  subnet_group_name    = aws_elasticache_subnet_group.main.name
-  security_group_ids   = [aws_security_group.redis.id]
+resource "aws_elasticache_replication_group" "main" {
+  replication_group_id = "${var.project_name}-redis"
+  description          = "Redis replication group for ${var.project_name}"
+
+  node_type            = "cache.t3.micro"
+  num_cache_clusters   = 1
+  parameter_group_name = "default.redis7"
+  port                 = 6379
+
+  subnet_group_name  = aws_elasticache_subnet_group.main.name
+  security_group_ids = [aws_security_group.redis.id]
+
+  # at_rest_encryption_enabled = true  # Provider 버전 이슈로 비활성화
+  # transit_encryption_enabled = true
 
   tags = {
     Name = "${var.project_name}-redis"
