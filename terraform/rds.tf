@@ -1,3 +1,30 @@
+# RDS security group
+resource "aws_security_group" "rds" {
+  name        = "${var.project_name}-sg-rds"
+  description = "RDS security group allowing access from backend EC2"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description     = "Allow backend EC2 access to MySQL"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.backend_ec2.id]
+  }
+
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-rds-sg"
+  }
+}
+
 # 1. RDS가 배치될 서브넷 그룹 정의 (2개 이상의 AZ에 걸친 DB 서브넷 사용)
 resource "aws_db_subnet_group" "database" {
   name       = "${var.project_name}-db-subnet-group"
