@@ -37,6 +37,77 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 }
 
 # ────────────────────────────────────────────────────────────────────────────
+# EC2 security groups
+# ────────────────────────────────────────────────────────────────────────────
+
+resource "aws_security_group" "frontend_ec2" {
+  name        = "${var.project_name}-sg-frontend"
+  description = "Frontend EC2 security group for Nginx and ALB access"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description     = "Allow ALB to connect to frontend HTTP"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
+  }
+
+  ingress {
+    description     = "Allow ALB to connect to frontend HTTPS"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
+  }
+
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-frontend-sg"
+  }
+}
+
+resource "aws_security_group" "backend_ec2" {
+  name        = "${var.project_name}-sg-backend"
+  description = "Backend EC2 security group for API servers and database/cache access"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description     = "Allow frontend EC2 to connect to backend API"
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [aws_security_group.frontend_ec2.id]
+  }
+
+  ingress {
+    description     = "Allow ALB to connect to backend API"
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
+  }
+
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-backend-sg"
+  }
+}
+
 # AMI Data Source (우분투 22.04  조회)
 # ────────────────────────────────────────────────────────────────────────────
 
