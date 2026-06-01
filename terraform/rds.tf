@@ -1,35 +1,23 @@
-# 1. RDS가 배치될 서브넷 그룹 정의 (2개 이상의 AZ에 걸친 DB 서브넷 사용)
-resource "aws_db_subnet_group" "database" {
-  name       = "${var.project_name}-db-subnet-group"
-  subnet_ids = aws_subnet.public[*].id
-
-  tags = {
-    Name = "${var.project_name}-db-subnet-group"
-  }
-}
-
-# 2. RDS 보안 그룹 (문지기 설정)
+# RDS security group
 resource "aws_security_group" "rds" {
-  name        = "${var.project_name}-rds-sg"
-  description = "Allow MySQL traffic from EKS nodes only"
+  name        = "${var.project_name}-sg-rds"
+  description = "RDS security group allowing access from backend EC2"
   vpc_id      = aws_vpc.main.id
 
-  # 인바운드 규칙: WAS(EKS) 보안 그룹으로부터의 3306 포트만 허용
   ingress {
+    description     = "Allow backend EC2 access to MySQL"
     from_port       = 3306
     to_port         = 3306
     protocol        = "tcp"
-    security_groups = ["sg-057f09b2ce8c30ef5",aws_security_group.eks_nodes.id,"sg-0b5a7d2c4ba3cc669"]
-    description = "Allow MySQL access from EKS nodes only"
+    security_groups = [aws_security_group.backend_ec2.id]
   }
 
-  # 아웃바운드: RDS는 외부 인터넷으로 나갈 이유가 없으므로 VPC 내부로만 제한
   egress {
+    description = "Allow all outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = [var.vpc_cidr]
-    description = "Allow outbound within VPC only"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
@@ -37,7 +25,17 @@ resource "aws_security_group" "rds" {
   }
 }
 
-# 3. RDS MySQL 인스턴스 생성
+# 1. RDS가 배치될 서브넷 그룹 정의 (2개 이상의 AZ에 걸친 DB 서브넷 사용)
+resource "aws_db_subnet_group" "database" {
+  name       = "${var.project_name}-db-subnet-group"
+  subnet_ids = aws_subnet.database[*].id # aws_subnet.database는 aws_subnet 리소스의 리스트로 가정
+
+  tags = {
+    Name = "${var.project_name}-db-subnet-group"
+  }
+}
+
+# 2. RDS MySQL 인스턴스 생성
 resource "aws_db_instance" "main" {
   allocated_storage      = 20
   max_allocated_storage  = 100 # 스토리지 오토스케일링
@@ -56,8 +54,13 @@ resource "aws_db_instance" "main" {
   
   skip_final_snapshot    = true # 프로젝트 종료 후 삭제 편의를 위함
   multi_az               = false # 비용 절감을 위해 단일 AZ (운영 시 true 권장)
-  publicly_accessible    = false # 외부 접근 차단 (보안 핵심) 나중에 false로 수정
+  publicly_accessible    = false # 외부 접근 차단 (보안 핵심)
 
+
+  # ── KMS 암호화 적용 (kms.tf의 rds_key 참조) ──────────────────────────────
+  storage_encrypted = true
+  kms_key_id        = aws_kms_key.rds_key.arn
+  
   tags = {
     Name = "${var.project_name}-rds"
   }

@@ -26,87 +26,77 @@ output "database_subnet_ids" {
   value       = aws_subnet.database[*].id
 }
 
-# ── EKS ────────────────────────────────────────────────────────────────────
-
-output "eks_cluster_name" {
-  description = "EKS 클러스터 이름 (kubectl config용)"
-  value       = aws_eks_cluster.main.name
-}
-
-output "eks_cluster_endpoint" {
-  description = "EKS API 서버 엔드포인트"
-  value       = aws_eks_cluster.main.endpoint
-}
-
-output "eks_cluster_ca_certificate" {
-  description = "EKS 클러스터 CA 인증서 (kubeconfig에 사용)"
-  value       = aws_eks_cluster.main.certificate_authority[0].data
-  sensitive   = true
-}
-
-output "eks_node_security_group_id" {
-  description = "EKS 노드 보안 그룹 ID"
-  value       = aws_security_group.eks_nodes.id
-}
-
-# kubeconfig 업데이트 명령어 안내
-output "kubeconfig_update_command" {
-  description = "로컬 kubeconfig 업데이트 명령어"
-  value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${aws_eks_cluster.main.name}"
-}
-
 # ── ECR ────────────────────────────────────────────────────────────────────
 
-output "ecr_backend_repository_url" {
-  description = "백엔드 ECR 레포지토리 URL (docker push 시 사용)"
-  value       = aws_ecr_repository.backend.repository_url
-}
+# output "ecr_backend_repository_url" {
+#   description = "백엔드 ECR 레포지토리 URL (docker push 시 사용)"
+#   value       = aws_ecr_repository.backend.repository_url
+# }
 
-output "ecr_frontend_repository_url" {
-  description = "프론트엔드 ECR 레포지토리 URL"
-  value       = aws_ecr_repository.frontend.repository_url
-}
+# output "ecr_frontend_repository_url" {
+#   description = "프론트엔드 ECR 레포지토리 URL"
+#   value       = aws_ecr_repository.frontend.repository_url
+# }
 
-# ECR 로그인 명령어 안내
-output "ecr_login_command" {
-  description = "ECR 도커 로그인 명령어"
-  value       = "aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${aws_ecr_repository.backend.repository_url}"
-}
+# # ECR 로그인 명령어 안내
+# output "ecr_login_command" {
+#   description = "ECR 도커 로그인 명령어"
+#   value       = "aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${aws_ecr_repository.backend.repository_url}"
+# }
 
-# ── RDS ────────────────────────────────────────────────────────────────────
+#── RDS ────────────────────────────────────────────────────────────────────
 
-output "rds_endpoint" {
-  description = "RDS 엔드포인트 (애플리케이션 DB 연결 주소)"
-  value       = aws_db_instance.main.endpoint
-}
+# output "rds_endpoint" {
+#   description = "RDS 엔드포인트 (애플리케이션 DB 연결 주소)"
+#   value       = aws_db_instance.main.endpoint
+# }
 
-output "rds_port" {
-  description = "RDS 포트"
-  value       = aws_db_instance.main.port
-}
+# output "rds_port" {
+#   description = "RDS 포트"
+#   value       = aws_db_instance.main.port
+# }
 
-output "rds_database_name" {
-  description = "RDS 초기 데이터베이스 이름"
-  value       = aws_db_instance.main.db_name
-}
+# output "rds_database_name" {
+#   description = "RDS 초기 데이터베이스 이름"
+#   value       = aws_db_instance.main.db_name
+# }
 
 # ── S3 ─────────────────────────────────────────────────────────────────────
 
-output "s3_uploads_bucket_name" {
-  description = "업로드 버킷 이름"
-  value       = aws_s3_bucket.app.bucket
+output "s3_image_bucket_name" {
+  description = "이미지 업로드 버킷 이름"
+  value       = aws_s3_bucket.travel_image.bucket
 }
 
-output "s3_uploads_bucket_arn" {
-  description = "업로드 버킷 ARN (IAM 정책에서 참조)"
-  value       = aws_s3_bucket.app.arn
+output "s3_image_bucket_arn" {
+  description = "이미지 업로드 버킷 ARN (IAM 정책에서 참조)"
+  value       = aws_s3_bucket.travel_image.arn
 }
 
-# ── LBC ────────────────────────────────────────────────────────────────────
+output "s3_eticket_bucket_name" {
+  description = "E-ticket/PDF 업로드 버킷 이름"
+  value       = aws_s3_bucket.eticket.bucket
+}
 
-# lbc_role_arn은 lbc.tf에 이미 output으로 정의되어 있습니다.
-# Helm 설치 시 사용:
-# helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
-#   -n kube-system \
-#   --set clusterName=<eks_cluster_name> \
-#   --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=<lbc_role_arn>
+output "s3_eticket_bucket_arn" {
+  description = "E-ticket/PDF 업로드 버킷 ARN (IAM 정책에서 참조)"
+  value       = aws_s3_bucket.eticket.arn
+}
+
+# ── Outputs ─────────────────────────────────────────────────────────────────
+
+output "sqs_queue_url" {
+  description = "메인 SQS 큐 URL (Spring Boot application.yml에서 참조)"
+  value       = aws_sqs_queue.main.url
+}
+
+output "sqs_queue_arn" {
+  description = "메인 SQS 큐 ARN"
+  value       = aws_sqs_queue.main.arn
+}
+
+output "sqs_dlq_url" {
+  description = "Dead Letter Queue URL"
+  value       = aws_sqs_queue.dlq.url
+}
+

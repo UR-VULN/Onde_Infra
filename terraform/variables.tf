@@ -7,13 +7,26 @@ variable "aws_region" {
 variable "project_name" {
   description = "프로젝트 이름 (리소스 이름 prefix)"
   type        = string
-  default     = "team01-mini-project3"
+  default     = "onde"
 }
 
 variable "environment" {
   description = "배포 환경 (dev / staging / prod)"
   type        = string
   default     = "dev"
+}
+
+# ── S3 ────────────────────────────────────────────────────────────────────
+variable "s3_image_bucket_name" {
+  description = "이미지 저장용 S3 버킷 이름"
+  type        = string
+  default     = "onde-travel-image-bucket"
+}
+
+variable "s3_eticket_bucket_name" {
+  description = "E-Ticket 저장용 S3 버킷 이름"
+  type        = string
+  default     = "onde-eticket-bucket"
 }
 
 # ── VPC ────────────────────────────────────────────────────────────────────
@@ -31,7 +44,7 @@ variable "public_subnet_cidrs" {
 }
 
 variable "private_subnet_cidrs" {
-  description = "프라이빗 서브넷 CIDR 목록 (EKS 노드 배치)"
+  description = "프라이빗 서브넷 CIDR 목록 (EC2 노드 배치)"
   type        = list(string)
   default     = ["10.0.10.0/24", "10.0.20.0/24"]
 }
@@ -39,45 +52,7 @@ variable "private_subnet_cidrs" {
 variable "availability_zones" {
   description = "가용 영역 목록 (서브넷 수와 일치해야 함)"
   type        = list(string)
-  default     = ["ap-northeast-2a", "ap-northeast-2c"]
-}
-
-# ── EKS ────────────────────────────────────────────────────────────────────
-
-variable "kubernetes_version" {
-  description = "EKS 쿠버네티스 버전"
-  type        = string
-  default     = "1.32"
-}
-
-variable "node_instance_type" {
-  description = "워커 노드 EC2 인스턴스 타입"
-  type        = string
-  default     = "t3.medium"
-}
-
-variable "node_desired_size" {
-  description = "노드 그룹 희망 노드 수"
-  type        = number
-  default     = 2
-}
-
-variable "node_min_size" {
-  description = "노드 그룹 최소 노드 수"
-  type        = number
-  default     = 1
-}
-
-variable "node_max_size" {
-  description = "노드 그룹 최대 노드 수"
-  type        = number
-  default     = 4
-}
-
-variable "nodes_on" {
-  description = "노드 그룹 활성화 여부 (true: 시작, false: 종료)"
-  type        = bool
-  default     = true
+  default     = ["ap-northeast-2a", "ap-northeast-2c"] # 가용성을 나누기 위한 
 }
 
 # ── RDS ────────────────────────────────────────────────────────────────────
@@ -112,10 +87,9 @@ variable "db_password" {
   sensitive   = true # terraform output 및 로그에 출력되지 않음
 }
 
-# ── REDIS ──────────────────────────────────────────────────────────────────
-
-variable "redis_subnet_cidrs" {
-  description = "Redis 서브넷 CIDR 목록"
-  type        = list(string)
-  default     = ["10.0.30.0/24", "10.0.40.0/24"]
+# ── SNS ────────────────────────────────────────────────────────────────────
+variable "operator_email" {
+  description = "운영자 알림 수신 이메일 주소"
+  type        = string
+  default     = "your-email@example.com" # 실제 이메일로 교체 필요
 }
