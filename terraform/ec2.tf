@@ -31,6 +31,51 @@ resource "aws_iam_role_policy_attachment" "ssm_managed_core" {
 }
 
 # EC2 인스턴스에 부착할 프로파일
+resource "aws_iam_role_policy" "ec2_secretsmanager_policy" {
+  name = "${var.project_name}-ec2-secretsmanager-policy"
+  role = aws_iam_role.ec2_ssm_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowReadBackendSecret"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:onde-project/backend-*"
+      }
+    ]
+  })
+}
+
+# S3 버킷 접근 권한 (이미지 업로드 / e-ticket 생성)
+resource "aws_iam_role_policy" "ec2_s3_policy" {
+  name = "${var.project_name}-ec2-s3-policy"
+  role = aws_iam_role.ec2_ssm_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowS3BucketAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.s3_image_bucket_name}/*",
+          "arn:aws:s3:::${var.s3_eticket_bucket_name}/*"
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "ec2_profile" {
   name = "${var.project_name}-ec2-instance-profile"
   role = aws_iam_role.ec2_ssm_role.name

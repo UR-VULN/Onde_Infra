@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: team01-ingress
-  namespace: mini-project3
+  namespace: onde-project
   annotations:
     alb.ingress.kubernetes.io/load-balancer-name: team01-alb
     # AWS ALB를 사용하기 위한 필수 설정

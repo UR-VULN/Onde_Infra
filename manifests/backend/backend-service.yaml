@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: backend-service
-  namespace: mini-project3
+  namespace: onde-project
   annotations:
     alb.ingress.kubernetes.io/healthcheck-path: /api/health
     #alb.ingress.kubernetes.io/success-codes: '200,302,403,405'
