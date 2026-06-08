@@ -53,13 +53,16 @@ resource "aws_cloudtrail" "onde_trail" {
   include_global_service_events = true
   is_multi_region_trail         = false
   enable_log_file_validation    = true
-
   # CloudWatch Logs 연동
   cloud_watch_logs_group_arn = "${aws_cloudwatch_log_group.cloudtrail.arn}:*"
   cloud_watch_logs_role_arn  = aws_iam_role.cloudtrail_role.arn
-
   tags = {
     Name    = "onde-cloudtrail"
     Project = "onde"
   }
+  # S3 버킷 정책 및 IAM 롤 정책이 먼저 정상 반영된 후 CloudTrail이 생성되도록 강제
+  depends_on = [
+    aws_s3_bucket_policy.cloudtrail_logs,
+    aws_iam_role_policy.cloudtrail_policy
+  ]
 }
