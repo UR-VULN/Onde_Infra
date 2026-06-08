@@ -1,9 +1,3 @@
-# ────────────────────────────────────────────────────────────────────────────
-# ECR (Elastic Container Registry)
-# 프론트엔드 / 사용자 백엔드 / 판매자 백엔드 도커 이미지 저장소
-# 관리자 백엔드(Windows)는 jar 직접 실행으로 ECR 미사용
-# ────────────────────────────────────────────────────────────────────────────
-
 # ── 프론트엔드 ECR 리포지토리 ────────────────────────────────────────────────
 
 resource "aws_ecr_repository" "frontend" {
@@ -20,10 +14,10 @@ resource "aws_ecr_repository" "frontend" {
   }
 }
 
-# ── 사용자 API 백엔드 ECR 리포지토리 (Backend-1 Linux) ───────────────────────
+# ── 백엔드 ECR 리포지토리 (api-module → Linux EC2 x2) ────────────────────────
 
-resource "aws_ecr_repository" "backend_user" {
-  name                 = "${var.project_name}/backend-user"
+resource "aws_ecr_repository" "backend" {
+  name                 = "${var.project_name}/backend"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -31,15 +25,15 @@ resource "aws_ecr_repository" "backend_user" {
   }
 
   tags = {
-    Name    = "${var.project_name}-backend-user-ecr"
+    Name    = "${var.project_name}-backend-ecr"
     Project = var.project_name
   }
 }
 
-# ── 판매자 API 백엔드 ECR 리포지토리 (Backend-2 Linux) ───────────────────────
+# ── 관리자 ECR 리포지토리 (admin-module → Windows EC2) ───────────────────────
 
-resource "aws_ecr_repository" "backend_seller" {
-  name                 = "${var.project_name}/backend-seller"
+resource "aws_ecr_repository" "backend_admin" {
+  name                 = "${var.project_name}/backend-admin"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -47,7 +41,7 @@ resource "aws_ecr_repository" "backend_seller" {
   }
 
   tags = {
-    Name    = "${var.project_name}-backend-seller-ecr"
+    Name    = "${var.project_name}-backend-admin-ecr"
     Project = var.project_name
   }
 }
@@ -71,8 +65,8 @@ resource "aws_ecr_lifecycle_policy" "frontend" {
   })
 }
 
-resource "aws_ecr_lifecycle_policy" "backend_user" {
-  repository = aws_ecr_repository.backend_user.name
+resource "aws_ecr_lifecycle_policy" "backend" {
+  repository = aws_ecr_repository.backend.name
 
   policy = jsonencode({
     rules = [{
@@ -88,8 +82,8 @@ resource "aws_ecr_lifecycle_policy" "backend_user" {
   })
 }
 
-resource "aws_ecr_lifecycle_policy" "backend_seller" {
-  repository = aws_ecr_repository.backend_seller.name
+resource "aws_ecr_lifecycle_policy" "backend_admin" {
+  repository = aws_ecr_repository.backend_admin.name
 
   policy = jsonencode({
     rules = [{
@@ -109,7 +103,7 @@ resource "aws_ecr_lifecycle_policy" "backend_seller" {
 
 resource "aws_iam_role_policy" "ec2_ecr_policy" {
   name = "${var.project_name}-ec2-ecr-policy"
-  role = aws_iam_role.ec2_ssm_role.id # ec2.tf의 SSM 역할에 ECR 권한 추가
+  role = aws_iam_role.ec2_ssm_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -118,12 +112,11 @@ resource "aws_iam_role_policy" "ec2_ecr_policy" {
         Sid    = "AllowECRAccess"
         Effect = "Allow"
         Action = [
-        "ecr:GetAuthorizationToken",        # 로그인
-        "ecr:BatchCheckLayerAvailability",  # 다운로드용
-        "ecr:GetDownloadUrlForLayer",       # 다운로드용
-        "ecr:BatchGetImage"                 # 다운로드용
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
         ]
-
         Resource = "*"
       }
     ]
@@ -137,17 +130,17 @@ output "ecr_frontend_repository_url" {
   value       = aws_ecr_repository.frontend.repository_url
 }
 
-output "ecr_backend_user_repository_url" {
-  description = "사용자 API 백엔드 ECR 리포지토리 URL"
-  value       = aws_ecr_repository.backend_user.repository_url
+output "ecr_backend_repository_url" {
+  description = "백엔드 ECR 리포지토리 URL"
+  value       = aws_ecr_repository.backend.repository_url
 }
 
-output "ecr_backend_seller_repository_url" {
-  description = "판매자 API 백엔드 ECR 리포지토리 URL"
-  value       = aws_ecr_repository.backend_seller.repository_url
+output "ecr_backend_admin_repository_url" {
+  description = "관리자 백엔드 ECR 리포지토리 URL"
+  value       = aws_ecr_repository.backend_admin.repository_url
 }
 
 output "ecr_login_command" {
   description = "ECR 도커 로그인 명령어"
-  value       = "aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${aws_ecr_repository.backend_user.repository_url}"
+  value       = "aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${aws_ecr_repository.backend.repository_url}"
 }
