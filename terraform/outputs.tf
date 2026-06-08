@@ -73,30 +73,12 @@ output "s3_image_bucket_arn" {
   value       = aws_s3_bucket.travel_image.arn
 }
 
-output "s3_eticket_bucket_name" {
-  description = "E-ticket/PDF 업로드 버킷 이름"
-  value       = aws_s3_bucket.eticket.bucket
+
+
+
+# ── CloudFront ─────────────────────────────────────────────────────────────
+
+output "cloudfront_domain_name" {
+  description = "이미지 제공용 CloudFront 도메인 주소"
+  value       = aws_cloudfront_distribution.travel_image.domain_name
 }
-
-output "s3_eticket_bucket_arn" {
-  description = "E-ticket/PDF 업로드 버킷 ARN (IAM 정책에서 참조)"
-  value       = aws_s3_bucket.eticket.arn
-}
-
-# ── Outputs ─────────────────────────────────────────────────────────────────
-
-output "sqs_queue_url" {
-  description = "메인 SQS 큐 URL (Spring Boot application.yml에서 참조)"
-  value       = aws_sqs_queue.main.url
-}
-
-output "sqs_queue_arn" {
-  description = "메인 SQS 큐 ARN"
-  value       = aws_sqs_queue.main.arn
-}
-
-output "sqs_dlq_url" {
-  description = "Dead Letter Queue URL"
-  value       = aws_sqs_queue.dlq.url
-}
-
