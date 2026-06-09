@@ -213,6 +213,11 @@ resource "aws_instance" "frontend" {
     apt-get install -y docker-ce docker-ce-cli containerd.io
     systemctl enable docker
     systemctl start docker
+
+    # SSM Agent 설치 및 활성화 보장
+    snap install amazon-ssm-agent --classic
+    systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
+    systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
     EOF
   tags = {
     Name = "${var.project_name}-frontend"
@@ -243,6 +248,11 @@ resource "aws_instance" "backend_1" {
   apt-get install -y docker-ce docker-ce-cli containerd.io
   systemctl enable docker
   systemctl start docker
+
+  # SSM Agent 설치 및 활성화 보장
+  snap install amazon-ssm-agent --classic
+  systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
+  systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
   EOF
   tags = {
     Name = "${var.project_name}-backend-1"
@@ -273,6 +283,11 @@ resource "aws_instance" "backend_2" {
   apt-get install -y docker-ce docker-ce-cli containerd.io
   systemctl enable docker
   systemctl start docker
+
+  # SSM Agent 설치 및 활성화 보장
+  snap install amazon-ssm-agent --classic
+  systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
+  systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
   EOF
   tags = {
     Name = "${var.project_name}-backend-2"
@@ -357,6 +372,10 @@ resource "aws_instance" "backend_windows" {
 
     # 앱 디렉토리 생성
     New-Item -ItemType Directory -Force -Path C:\app
+
+    # SSM Agent 활성화 및 시작 보장
+    Set-Service -Name "AmazonSSMAgent" -StartupType Automatic
+    Start-Service -Name "AmazonSSMAgent"
     </powershell>
     EOF
   tags = {
