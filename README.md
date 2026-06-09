@@ -1,6 +1,16 @@
 # Onde Infra
 
-- LBS 기반 여행 예약 및 동행 커뮤니티 플랫폼의 인프라 코드, 매니페스트, 도커 파일, 테라폼 구성 등을 모아둔 저장소입니다.
+- SK쉴더스 루키즈 개발 5기 최종 프로젝트 LBS 기반 여행 예약 및 동행 커뮤니티 플랫폼 Onde 서비스를 AWS 기반으로 배포하기 위한 인프라 레포입니다. Terraform으로 AWS 리소스를 구성하고, Kubernetes manifest와 Argo CD를 통해 EC2 위에 프론트엔드/백엔드 애플리케이션을 배포하는 구조입니다.
+
+현재 구조의 핵심은 다음과 같습니다.
+
+Terraform: VPC, EC2, RDS, S3 기반 컨트롤러 설치
+EC2: 프론트엔드, 백엔드 리소스 실행
+SSM Parameter Store: DB, S3, IAM Role ARN, WAF ARN, ACM ARN 등 환경별 값을 저장
+External Secrets Operator: SSM 값을 Kubernetes Secret으로 동기화
+AWS Load Balancer Controller: Kubernetes Ingress를 보고 ALB 생성
+Route53 + ACM: macta.store 도메인과 HTTPS 인증서 연결
+통신 구조: 정적 파일은 프론트 Nginx가 서빙하고, 동적 API 호출은 ALB가 /api/v1 경로로 백엔드 서비스에 직접 전달
 
 ---
 
@@ -12,6 +22,12 @@
 - [로컬 개발 및 빌드](#로컬-개발-및-빌드)
 - [배포 및 인프라](#배포-및-인프라)
 - [환경 및 요구사항](#환경-및-요구사항)
+
+---
+
+## 전체 구조
+
+<img width="1100" height="611" alt="infra 아키텍처 설계도 " src="https://github.com/user-attachments/assets/b4b51862-e9fd-4675-8cf4-4da987c1891a" />
 
 ---
 
@@ -29,7 +45,7 @@
 
 - LBS 기반 서비스 아키텍처 문서화 및 환경 구성
 - ALB/Ingress, External Secrets, Service Account 등 K8s 관련 매니페스트 제공
-- Terraform으로 AWS 리소스(EC2, EKS, RDS, ElastiCache, S3, ECR 등) 프로비저닝
+- Terraform으로 AWS 리소스(EC2, RDS, ElastiCache, S3 등) 프로비저닝
 - Dockerfile 기반 프론트엔드/백엔드 이미지 빌드
 
 ## 리포지토리 구조
