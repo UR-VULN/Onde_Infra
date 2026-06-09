@@ -120,6 +120,10 @@ resource "aws_lb_target_group" "backend_windows" {
   tags = {
     Name = "${var.project_name}-backend-windows-tg"
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # ────────────────────────────────────────────────────────────────────────────

@@ -74,6 +74,22 @@ resource "aws_iam_role_policy" "ec2_s3_policy" {
     ]
   })
 }
+#윈도우용 버킷
+resource "aws_iam_role_policy" "ec2_deploy_s3_policy" {
+  name = "${var.project_name}-ec2-deploy-s3-policy"
+  role = aws_iam_role.ec2_ssm_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["s3:GetObject"]
+        Resource = "arn:aws:s3:::${var.project_name}-deploy-artifacts/*"
+      }
+    ]
+  })
+}
 
 resource "aws_iam_instance_profile" "ec2_profile" {
   name = "${var.project_name}-ec2-instance-profile"
@@ -182,12 +198,22 @@ resource "aws_instance" "frontend" {
   vpc_security_group_ids = [aws_security_group.frontend_ec2.id]
 
   user_data = <<-EOF
-              #!/bin/bash
-              apt-get update -y
-              apt-get install -y nginx
-              systemctl enable --now nginx
-              EOF
+    #!/bin/bash
+    apt-get update -y
+    apt-get install -y ca-certificates curl gnupg awscli
 
+    install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    chmod a+r /etc/apt/keyrings/docker.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+    https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+    | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+    apt-get update -y
+    apt-get install -y docker-ce docker-ce-cli containerd.io
+    systemctl enable docker
+    systemctl start docker
+    EOF
   tags = {
     Name = "${var.project_name}-frontend"
   }
@@ -202,57 +228,22 @@ resource "aws_instance" "backend_1" {
   vpc_security_group_ids = [aws_security_group.backend_ec2.id]
 
   user_data = <<-EOF
-              #!/bin/bash
-              set -e
+  #!/bin/bash
+  apt-get update -y
+  apt-get install -y ca-certificates curl gnupg awscli
 
-              # 1. 패키지 설치
-              apt-get update -y
-              apt-get install -y openjdk-17-jdk awscli jq
+  install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  chmod a+r /etc/apt/keyrings/docker.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+  | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-              # 2. 앱 디렉토리 생성
-              mkdir -p /app
-
-              # 3. Secrets Manager에서 값 읽어 실행하는 시작 스크립트 생성
-              cat > /app/start.sh << 'STARTSCRIPT'
-              #!/bin/bash
-              SECRET=$(aws secretsmanager get-secret-value \
-                --secret-id onde-project/backend \
-                --region ap-northeast-2 \
-                --query SecretString \
-                --output text)
-
-              export DB_HOST=$(echo $SECRET | jq -r '.DB_HOST')
-              export DB_PASSWORD=$(echo $SECRET | jq -r '.DB_PASSWORD')
-              export REDIS_HOST=$(echo $SECRET | jq -r '.REDIS_HOST')
-              export TZ=Asia/Seoul
-
-              exec java -jar /app/app.jar
-              STARTSCRIPT
-              chmod +x /app/start.sh
-
-              # 4. systemd 서비스 등록 (GitHub Actions가 JAR 배포 후 재시작)
-              cat > /etc/systemd/system/backend.service << 'SERVICE'
-              [Unit]
-              Description=Spring Boot Backend Application
-              After=network.target
-
-              [Service]
-              Type=simple
-              User=ubuntu
-              ExecStart=/app/start.sh
-              Restart=on-failure
-              RestartSec=10
-              StandardOutput=journal
-              StandardError=journal
-
-              [Install]
-              WantedBy=multi-user.target
-              SERVICE
-
-              systemctl daemon-reload
-              systemctl enable backend
-              EOF
-
+  apt-get update -y
+  apt-get install -y docker-ce docker-ce-cli containerd.io
+  systemctl enable docker
+  systemctl start docker
+  EOF
   tags = {
     Name = "${var.project_name}-backend-1"
   }
@@ -267,57 +258,22 @@ resource "aws_instance" "backend_2" {
   vpc_security_group_ids = [aws_security_group.backend_ec2.id]
 
   user_data = <<-EOF
-              #!/bin/bash
-              set -e
+  #!/bin/bash
+  apt-get update -y
+  apt-get install -y ca-certificates curl gnupg awscli
 
-              # 1. 패키지 설치
-              apt-get update -y
-              apt-get install -y openjdk-17-jdk awscli jq
+  install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  chmod a+r /etc/apt/keyrings/docker.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+  | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-              # 2. 앱 디렉토리 생성
-              mkdir -p /app
-
-              # 3. Secrets Manager에서 값 읽어 실행하는 시작 스크립트 생성
-              cat > /app/start.sh << 'STARTSCRIPT'
-              #!/bin/bash
-              SECRET=$(aws secretsmanager get-secret-value \
-                --secret-id onde-project/backend \
-                --region ap-northeast-2 \
-                --query SecretString \
-                --output text)
-
-              export DB_HOST=$(echo $SECRET | jq -r '.DB_HOST')
-              export DB_PASSWORD=$(echo $SECRET | jq -r '.DB_PASSWORD')
-              export REDIS_HOST=$(echo $SECRET | jq -r '.REDIS_HOST')
-              export TZ=Asia/Seoul
-
-              exec java -jar /app/app.jar
-              STARTSCRIPT
-              chmod +x /app/start.sh
-
-              # 4. systemd 서비스 등록 (GitHub Actions가 JAR 배포 후 재시작)
-              cat > /etc/systemd/system/backend.service << 'SERVICE'
-              [Unit]
-              Description=Spring Boot Backend Application
-              After=network.target
-
-              [Service]
-              Type=simple
-              User=ubuntu
-              ExecStart=/app/start.sh
-              Restart=on-failure
-              RestartSec=10
-              StandardOutput=journal
-              StandardError=journal
-
-              [Install]
-              WantedBy=multi-user.target
-              SERVICE
-
-              systemctl daemon-reload
-              systemctl enable backend
-              EOF
-
+  apt-get update -y
+  apt-get install -y docker-ce docker-ce-cli containerd.io
+  systemctl enable docker
+  systemctl start docker
+  EOF
   tags = {
     Name = "${var.project_name}-backend-2"
   }
@@ -388,6 +344,21 @@ resource "aws_instance" "backend_windows" {
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
   vpc_security_group_ids = [aws_security_group.windows_ec2.id]
 
+
+  user_data = <<-EOF
+    <powershell>
+    # Java 17 설치
+    Invoke-WebRequest `
+      -Uri "https://download.java.net/java/GA/jdk17/0d483333a00540d886ef971a00022282/35/GPL/openjdk-17_windows-x64_bin.zip" `
+      -OutFile "$env:TEMP\jdk17.zip"
+    Expand-Archive "$env:TEMP\jdk17.zip" -DestinationPath "C:\Program Files\Java"
+    [System.Environment]::SetEnvironmentVariable("JAVA_HOME", "C:\Program Files\Java\jdk-17", "Machine")
+    [System.Environment]::SetEnvironmentVariable("Path", "$env:Path;C:\Program Files\Java\jdk-17\bin", "Machine")
+
+    # 앱 디렉토리 생성
+    New-Item -ItemType Directory -Force -Path C:\app
+    </powershell>
+    EOF
   tags = {
     Name = "${var.project_name}-backend-windows"
   }

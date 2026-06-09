@@ -15,6 +15,13 @@ resource "aws_s3_bucket" "travel_image" {
     Project = var.project_name
   }
 }
+resource "aws_s3_bucket" "deploy" {
+  bucket = "${var.project_name}-deploy-artifacts"
+
+  tags = {
+    Name = "${var.project_name}-deploy-artifacts"
+  }
+}
 
 # 퍼블릭 접근 차단
 resource "aws_s3_bucket_public_access_block" "travel_image" {

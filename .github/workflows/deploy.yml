@@ -131,11 +131,9 @@ jobs:
             --instance-ids "${{ secrets.ADMIN_EC2_INSTANCE_ID }}" \
             --document-name "AWS-RunPowerShellScript" \
             --parameters commands="[
-              \"aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}\",
-              \"docker pull ${{ secrets.ECR_REGISTRY }}/onde/backend-admin:$IMAGE_TAG\",
-              \"docker stop onde-admin 2>NUL; exit 0\",
-              \"docker rm onde-admin 2>NUL; exit 0\",
-              \"docker run -d --name onde-admin -p 8081:8081 ${{ secrets.ECR_REGISTRY }}/onde/backend-admin:$IMAGE_TAG\"
+              \"aws s3 cp s3://${{ secrets.DEPLOY_BUCKET }}/admin/admin-module-$IMAGE_TAG.jar C:\\\\app\\\\admin-module.jar\",
+              \"Stop-Process -Name java -Force -ErrorAction SilentlyContinue\",
+              \"Start-Process java -ArgumentList '-jar C:\\\\app\\\\admin-module.jar' -NoNewWindow\"
             ]" \
             --comment "Deploy admin $IMAGE_TAG" \
             --query 'Command.CommandId' \
