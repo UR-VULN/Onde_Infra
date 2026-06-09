@@ -84,7 +84,7 @@ resource "aws_lb_target_group" "backend" {
   vpc_id   = aws_vpc.main.id
 
   health_check {
-    path                = "/api/health" # Spring Boot 관례적인 헬스 체크 경로
+    path                = "/api/v1/health" # 백엔드 API 헬스 체크 경로
     port                = "8080"
     protocol            = "HTTP"
     matcher             = "200"
@@ -107,7 +107,7 @@ resource "aws_lb_target_group" "backend_windows" {
   vpc_id   = aws_vpc.main.id
 
   health_check {
-    path                = "/api/health"
+    path                = "/api/v1/admin/health/readiness" # 어드민 모듈 헬스 체크 경로
     port                = "8080"
     protocol            = "HTTP"
     matcher             = "200"
@@ -174,7 +174,7 @@ resource "aws_lb_listener" "http" {
 # 6-1. Linux 백엔드 라우팅 규칙 (Path-based Routing): /api/* 요청은 백엔드로 전달
 resource "aws_lb_listener_rule" "api" {
   listener_arn = aws_lb_listener.http.arn # ALB의 HTTP 리스너 ARN 참조
-  priority     = 10 # 기본 규칙보다 높은 우선순위로 설정
+  priority     = 10                       # 기본 규칙보다 높은 우선순위로 설정
 
   action {
     type             = "forward"
@@ -191,7 +191,7 @@ resource "aws_lb_listener_rule" "api" {
 # 6-2. Windows 관리자 API 라우팅: /admin/* → Windows 백엔드 TG (priority 20) ── [추가]
 resource "aws_lb_listener_rule" "admin_api" {
   listener_arn = aws_lb_listener.http.arn
-  priority     = 20
+  priority     = 5
 
   action {
     type             = "forward"
@@ -204,4 +204,4 @@ resource "aws_lb_listener_rule" "admin_api" {
     }
   }
 }
- 
+

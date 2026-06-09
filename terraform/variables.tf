@@ -23,11 +23,6 @@ variable "s3_image_bucket_name" {
   default     = "onde-travel-image-bucket"
 }
 
-variable "s3_eticket_bucket_name" {
-  description = "E-Ticket 저장용 S3 버킷 이름"
-  type        = string
-  default     = "onde-eticket-bucket"
-}
 
 # ── VPC ────────────────────────────────────────────────────────────────────
 

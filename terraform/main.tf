@@ -22,9 +22,7 @@ locals {
   # s3.tf가 먼저 적용된 이후에 참조 가능
   s3_bucket_arns = [
     aws_s3_bucket.travel_image.arn,
-    "${aws_s3_bucket.travel_image.arn}/*",
-    aws_s3_bucket.eticket.arn,
-    "${aws_s3_bucket.eticket.arn}/*",
+    "${aws_s3_bucket.travel_image.arn}/*"
   ]
 }
 

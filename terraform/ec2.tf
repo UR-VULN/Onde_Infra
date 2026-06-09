@@ -68,8 +68,7 @@ resource "aws_iam_role_policy" "ec2_s3_policy" {
           "s3:DeleteObject"
         ]
         Resource = [
-          "arn:aws:s3:::${var.s3_image_bucket_name}/*",
-          "arn:aws:s3:::${var.s3_eticket_bucket_name}/*"
+          "arn:aws:s3:::${var.s3_image_bucket_name}/*"
         ]
       }
     ]

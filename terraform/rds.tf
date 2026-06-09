@@ -35,12 +35,12 @@ resource "aws_db_subnet_group" "database" {
   }
 }
 
-# 2. RDS MySQL 인스턴스 생성
+# 2. RDS MariaDB 인스턴스 생성
 resource "aws_db_instance" "main" {
   allocated_storage      = 20
   max_allocated_storage  = 100 # 스토리지 오토스케일링
-  engine                 = "mysql"
-  engine_version         = "8.0"
+  engine                 = "mariadb"
+  engine_version         = "10.11"
   instance_class         = var.db_instance_class 
   apply_immediately      = true
   
@@ -48,7 +48,7 @@ resource "aws_db_instance" "main" {
   username               = var.db_username
   password               = var.db_password # sensitive 변수 사용
 
-  parameter_group_name   = "default.mysql8.0"
+  parameter_group_name   = "default.mariadb10.11"
   db_subnet_group_name   = aws_db_subnet_group.database.name
   vpc_security_group_ids = [aws_security_group.rds.id]
   
