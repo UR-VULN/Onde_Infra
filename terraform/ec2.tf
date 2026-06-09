@@ -332,13 +332,22 @@ resource "aws_security_group" "windows_ec2" {
   vpc_id      = aws_vpc.main.id
 
 
-  # 프론트엔드 EC2가 백엔드 8080 포트로 접속하는 것 허용
+  # 프론트엔드 EC2가 백엔드 8081 포트로 접속하는 것 허용
   ingress {
     description     = "Allow frontend EC2 access to backend"
-    from_port       = 8080
-    to_port         = 8080
+    from_port       = 8081
+    to_port         = 8081
     protocol        = "tcp"
     security_groups = [aws_security_group.frontend_ec2.id]
+  }
+
+  # ALB가 백엔드 8081 포트로 접속하는 것 허용
+  ingress {
+    description     = "Allow ALB to connect to backend admin"
+    from_port       = 8081
+    to_port         = 8081
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
   }
 
   # 아웃바운드 전체 허용

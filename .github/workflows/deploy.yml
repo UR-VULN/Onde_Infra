@@ -135,7 +135,7 @@ jobs:
               \"docker pull ${{ secrets.ECR_REGISTRY }}/onde/backend-admin:$IMAGE_TAG\",
               \"docker stop onde-admin 2>NUL; exit 0\",
               \"docker rm onde-admin 2>NUL; exit 0\",
-              \"docker run -d --name onde-admin -p 8080:8080 ${{ secrets.ECR_REGISTRY }}/onde/backend-admin:$IMAGE_TAG\"
+              \"docker run -d --name onde-admin -p 8081:8081 ${{ secrets.ECR_REGISTRY }}/onde/backend-admin:$IMAGE_TAG\"
             ]" \
             --comment "Deploy admin $IMAGE_TAG" \
             --query 'Command.CommandId' \

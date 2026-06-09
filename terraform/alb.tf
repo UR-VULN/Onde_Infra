@@ -102,13 +102,13 @@ resource "aws_lb_target_group" "backend" {
 # 4. Windows 백엔드 타겟 그룹 (Spring Boot on Windows) ── [추가]
 resource "aws_lb_target_group" "backend_windows" {
   name     = "${var.project_name}-backend-win-tg"
-  port     = 8080
+  port     = 8081
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
 
   health_check {
     path                = "/api/v1/admin/health/readiness" # 어드민 모듈 헬스 체크 경로
-    port                = "8080"
+    port                = "8081"
     protocol            = "HTTP"
     matcher             = "200"
     interval            = 30
@@ -151,7 +151,7 @@ resource "aws_lb_target_group_attachment" "backend_2" {
 resource "aws_lb_target_group_attachment" "backend_windows" {
   target_group_arn = aws_lb_target_group.backend_windows.arn
   target_id        = aws_instance.backend_windows.id
-  port             = 8080
+  port             = 8081
 }
 
 # ────────────────────────────────────────────────────────────────────────────
