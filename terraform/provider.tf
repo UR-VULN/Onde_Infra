@@ -11,6 +11,14 @@ terraform {
       version = "~> 4.0"
     }
   }
+
+  backend "s3" {
+    bucket         = "onde-tfstate-bucket-802314158104"
+    key            = "terraform/state.tfstate"
+    region         = "ap-northeast-2"
+    dynamodb_table = "onde-tfstate-lock"
+    encrypt        = true
+  }
 }
 
 provider "aws" {  # AWS와 통신하기 위한 설정 
