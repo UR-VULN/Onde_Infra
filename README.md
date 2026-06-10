@@ -18,9 +18,6 @@
   - [AWS ACM](#7-aws-acm-certificate-manager)
   - [AWS Route 53](#8-aws-route-53)
   - [AWS SSM Parameter Store](#9-aws-ssm-parameter-store)
-  - [Kubernetes (K8s)](#10-kubernetes-k8s)
-  - [Argo CD](#11-argo-cd)
-  - [External Secrets Operator](#12-external-secrets-operator)
   - [AWS Load Balancer Controller](#13-aws-load-balancer-controller)
   - [Docker](#14-docker)
   - [Nginx](#15-nginx)
@@ -46,27 +43,7 @@
 
 ## 전체 구조
 
-```
-사용자 브라우저
-     │
-     ▼
-Route 53 (DNS: onde.click 도메인 → ALB로 연결)
-     │
-     ▼
-ALB (Application Load Balancer)
-  ├── HTTPS 443 → ACM 인증서로 암호화
-  ├── /api/v1/* → 백엔드 EC2로 전달
-  └── 그 외    → 프론트엔드 EC2로 전달
-     │
-     ▼
-EC2 인스턴스 (Kubernetes 위에서 실행)
-  ├── 프론트엔드 Pod (Nginx → 정적 파일 서빙)
-  └── 백엔드 Pod (Spring Boot API 서버)
-     │
-     ▼
-RDS (MySQL/PostgreSQL 데이터베이스)
-S3 (이미지, 파일 저장소)
-```
+<img width="901" height="848" alt="Onde drawio" src="https://github.com/user-attachments/assets/b344a81b-29d4-4dc7-9e7a-aa94e2b473a9" />
 
 ---
 
