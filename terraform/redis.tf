@@ -14,6 +14,14 @@ resource "aws_security_group" "redis" {
     security_groups = [aws_security_group.backend_ec2.id]
   }
 
+  ingress {
+    description     = "Allow Windows backend EC2 access to Redis"
+    from_port       = 6379
+    to_port         = 6379
+    protocol        = "tcp"
+    security_groups = [aws_security_group.windows_ec2.id]
+  }
+
   egress {
     description = "Allow all outbound traffic"
     from_port   = 0

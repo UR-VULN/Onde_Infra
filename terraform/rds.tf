@@ -5,11 +5,19 @@ resource "aws_security_group" "rds" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description     = "Allow backend EC2 access to MySQL"
+    description     = "Allow backend EC2 access to MariaDB"
     from_port       = 3306
     to_port         = 3306
     protocol        = "tcp"
     security_groups = [aws_security_group.backend_ec2.id]
+  }
+
+  ingress {
+    description     = "Allow Windows backend EC2 access to MariaDB"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.windows_ec2.id]
   }
 
   egress {
@@ -37,29 +45,29 @@ resource "aws_db_subnet_group" "database" {
 
 # 2. RDS MariaDB 인스턴스 생성
 resource "aws_db_instance" "main" {
-  allocated_storage      = 20
-  max_allocated_storage  = 100 # 스토리지 오토스케일링
-  engine                 = "mariadb"
-  engine_version         = "10.11"
-  instance_class         = var.db_instance_class 
-  apply_immediately      = true
-  
-  db_name                = var.db_name
-  username               = var.db_username
-  password               = var.db_password # sensitive 변수 사용
+  allocated_storage     = 20
+  max_allocated_storage = 100 # 스토리지 오토스케일링
+  engine                = "mariadb"
+  engine_version        = "10.11"
+  instance_class        = var.db_instance_class
+  apply_immediately     = true
+
+  db_name  = var.db_name
+  username = var.db_username
+  password = var.db_password # sensitive 변수 사용
 
   parameter_group_name   = "default.mariadb10.11"
   db_subnet_group_name   = aws_db_subnet_group.database.name
   vpc_security_group_ids = [aws_security_group.rds.id]
-  
-  skip_final_snapshot    = true # 프로젝트 종료 후 삭제 편의를 위함
-  multi_az               = false # 비용 절감을 위해 단일 AZ (운영 시 true 권장)
-  publicly_accessible    = false # 외부 접근 차단 (보안 핵심)
+
+  skip_final_snapshot = true  # 프로젝트 종료 후 삭제 편의를 위함
+  multi_az            = false # 비용 절감을 위해 단일 AZ (운영 시 true 권장)
+  publicly_accessible = false # 외부 접근 차단 (보안 핵심)
 
 
   # Storage encryption uses the AWS managed/default key.
   storage_encrypted = true
-  
+
   tags = {
     Name = "${var.project_name}-rds"
   }
