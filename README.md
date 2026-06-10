@@ -18,9 +18,9 @@
   - [AWS ACM](#7-aws-acm-certificate-manager)
   - [AWS Route 53](#8-aws-route-53)
   - [AWS SSM Parameter Store](#9-aws-ssm-parameter-store)
-  - [AWS Load Balancer Controller](#13-aws-load-balancer-controller)
-  - [Docker](#14-docker)
-  - [Nginx](#15-nginx)
+  - [AWS CloudFront](#10-aws-cloudfront)
+  - [Docker](#11-docker)
+  - [Nginx](#12-nginx)
 - [통신 흐름 상세 설명](#통신-흐름-상세-설명)
 - [리포지토리 구조](#리포지토리-구조)
 - [로컬 개발 및 빌드](#로컬-개발-및-빌드)
@@ -36,14 +36,14 @@
 포함된 항목:
 
 - **Terraform 코드** (`terraform/`) — AWS 리소스를 코드로 자동 생성
-- **Kubernetes 매니페스트** (`manifests/`, `argocd/`) — 애플리케이션 배포 설정
 - **Docker 파일** (`docker/`) — 애플리케이션 컨테이너 이미지 빌드
 
 ---
 
 ## 전체 구조
 
-<img width="901" height="848" alt="Onde drawio" src="https://github.com/user-attachments/assets/b344a81b-29d4-4dc7-9e7a-aa94e2b473a9" />
+<img width="901" height="848" alt="Onde drawio (1)" src="https://github.com/user-attachments/assets/a7c93487-e12d-434c-b5ee-cb19b984047d" />
+
 
 ---
 
@@ -123,7 +123,7 @@ EC2는 AWS가 운영하는 PC방의 컴퓨터 한 대를 빌리는 것과 같습
 > AWS에서 관리해주는 관계형 데이터베이스 서비스
 
 #### 왜 사용하나요?
-사용자 정보, 여행 예약 데이터 등을 저장하는 데이터베이스입니다. EC2에 직접 MySQL을 설치할 수도 있지만, RDS를 사용하면 AWS가 백업, 패치, 장애 복구를 자동으로 관리해줍니다.
+사용자 정보, 여행 예약 데이터 등을 저장하는 데이터베이스입니다. EC2에 직접 MariaDB를 설치할 수도 있지만, RDS를 사용하면 AWS가 백업, 패치, 장애 복구를 자동으로 관리해줍니다.
 
 #### 특징
 - EC2에서 직접 접근 가능 (프라이빗 서브넷에 위치하여 외부 직접 접근 차단)
@@ -144,8 +144,9 @@ EC2는 AWS가 운영하는 PC방의 컴퓨터 한 대를 빌리는 것과 같습
 여행 사진, 프로필 이미지 등 파일을 저장합니다. 서버에 파일을 저장하면 서버가 재시작될 때 파일이 사라질 수 있지만, S3는 별도의 저장소이므로 영구적으로 보관됩니다.
 
 #### 이 프로젝트에서의 역할
-- 사용자 업로드 파일 저장
-- Terraform의 상태 파일(tfstate) 저장 (인프라 변경 이력 관리)
+- 사용자 업로드 이미지 파일 저장 (CloudFront를 통해 서빙)
+- Windows 백엔드 배포용 JAR 파일 저장
+- CloudTrail API 감사 로그 저장
 
 #### 비유
 구글 드라이브나 드롭박스처럼, 파일을 인터넷 어딘가에 안전하게 올려두는 서비스입니다.
@@ -162,8 +163,9 @@ EC2는 AWS가 운영하는 PC방의 컴퓨터 한 대를 빌리는 것과 같습
 
 #### 이 프로젝트에서의 라우팅 규칙
 ```
-https://onde.click/api/v1/... → 백엔드 서버로 전달
-https://onde.click/...       → 프론트엔드 서버로 전달
+https://onde.click/admin/... → Windows 백엔드 서버로 전달 (priority 5)
+https://onde.click/api/v1/... → Linux 백엔드 서버로 전달 (priority 10)
+https://onde.click/...       → 프론트엔드 서버로 전달 (기본)
 ```
 
 #### 주요 기능
@@ -245,24 +247,30 @@ DB 비밀번호, S3 버킷 이름, IAM Role ARN 등 민감한 정보를 코드�
 
 ---
 
-### 10. AWS Load Balancer Controller
+### 10. AWS CloudFront
 
 #### 한 줄 요약
-> Terraform 코드 또는 AWS 콘솔에서 직접 ALB를 생성하고 관리합니다. 어느 URL 경로를 어느 서버로 보낼지 규칙을 직접 설정하며, Kubernetes 없이도 ALB가 독립적으로 동작합니다.
+> 전 세계 엣지 서버를 통해 콘텐츠를 빠르게 전달하는 CDN(콘텐츠 전송 네트워크) 서비스
 
-#### 왜 필요한가요?
-AWS 콘솔에서 직접 ALB를 생성하고 라우팅 규칙을 설정합니다. 어느 URL 경로를 어느 서버로 보낼지 개발자가 직접 콘솔에서 구성하며, Terraform으로 EC2 등 나머지 인프라를 생성한 뒤 ALB와 연결합니다.
+#### 왜 사용하나요?
+사용자가 이미지를 요청할 때마다 S3에서 직접 가져오면 느리고 비용도 많이 듭니다. CloudFront를 사용하면 사용자와 가장 가까운 엣지 서버에 이미지를 캐싱하여 빠르게 제공하고, S3를 외부에 직접 노출하지 않아 보안도 강화됩니다.
+
+#### 이 프로젝트에서의 역할
+- S3에 저장된 여행 이미지를 캐싱하여 빠르게 서빙
+- OAC(Origin Access Control)를 통해 CloudFront에서만 S3에 접근 가능하도록 제한
+- S3 직접 URL 접근 차단 (CloudFront URL로만 이미지 조회 가능)
 
 #### 동작 흐름
 ```
-AWS 콘솔에서 ALB 직접 생성
-           ↓
-리스너 추가 (HTTP 80, HTTPS 443)
-           ↓
-URL 경로별 라우팅 규칙 직접 설정
-(/api/v1/* → 백엔드, 그 외 → 프론트엔드)
-
+사용자가 이미지 URL 요청
+        ↓
+CloudFront 엣지 서버 (캐시 확인)
+        ├── 캐시 HIT  → 즉시 이미지 반환
+        └── 캐시 MISS → S3에서 이미지 가져온 후 캐싱하여 반환
 ```
+
+#### 비유
+편의점 체인과 같습니다. 본사 창고(S3)에서 매번 가져오는 대신, 가장 가까운 편의점(엣지 서버)에 미리 진열해 두어 빠르게 받아볼 수 있습니다.
 
 ---
 
@@ -300,7 +308,7 @@ Docker 이미지는 게임 CD(설치 파일)이고, 컨테이너는 그 게임�
 > 웹 서버 소프트웨어. 정적 파일을 빠르게 제공하고 리버스 프록시 역할을 함
 
 #### 이 프로젝트에서의 역할
-프론트엔드 Pod 안에서 Nginx가 실행되며:
+프론트엔드 EC2 컨테이너 안에서 Nginx가 실행되며:
 - React 빌드 결과물(HTML, CSS, JS)을 사용자에게 직접 제공
 - `/api/v1` 경로의 요청은 ALB를 통해 백엔드로 전달
 
@@ -323,15 +331,22 @@ Docker 이미지는 게임 CD(설치 파일)이고, 컨테이너는 그 게임�
    - URL 경로 확인
 
 4-A. URL이 /api/v1/... 인 경우
-   → 백엔드 Target Group → 백엔드 Pod → DB 조회 → JSON 응답 반환
+   → 백엔드 Target Group → 백엔드 EC2 컨테이너 → DB 조회 → JSON 응답 반환
 
-4-B. 그 외 URL인 경우
-   → 프론트엔드 Target Group → 프론트엔드 Pod
+4-B. URL이 /admin/... 인 경우
+   → Windows 백엔드 Target Group → Windows EC2 컨테이너 → 관리자 기능 처리
+
+4-C. 그 외 URL인 경우
+   → 프론트엔드 Target Group → 프론트엔드 EC2 컨테이너
    → Nginx가 index.html, JS, CSS 파일 반환
 
 5. 브라우저가 화면 렌더링
    - JS(React)가 실행되며 /api/v1/... 로 데이터 추가 요청
    - 위 4-A 과정 반복
+
+6. 이미지 조회 시
+   - CloudFront URL로 요청 → 캐시 HIT 시 즉시 반환
+   - 캐시 MISS 시 CloudFront → S3(OAC)에서 이미지 가져와 캐싱 후 반환
 ```
 
 ---
@@ -340,13 +355,9 @@ Docker 이미지는 게임 CD(설치 파일)이고, 컨테이너는 그 게임�
 
 ```
 onde-infra/
-├── argocd/          # Argo CD 앱 매니페스트 (자동 배포 설정)
 ├── docker/
 │   ├── backend/     # 백엔드 Dockerfile
 │   └── frontend/    # 프론트엔드 Dockerfile
-├── manifests/       # Kubernetes 배포/서비스/Ingress 매니페스트
-│   ├── backend/
-│   └── frontend/
 ├── terraform/       # AWS 인프라 코드 (VPC, EC2, RDS, S3 등)
 │   ├── main.tf
 │   ├── variables.tf
@@ -361,7 +372,7 @@ onde-infra/
 ### 사전 요구사항
 - Docker
 - Terraform (인프라 작업 시)
-- kubectl (Kubernetes 디버깅 시)
+- AWS CLI
 
 ### Docker 이미지 빌드
 
@@ -425,8 +436,11 @@ Docker 이미지 빌드 → ECR 푸시 → EC2에서 컨테이너 재시작
 docker build -t onde-backend:v1.1 ./docker/backend
 docker push <ECR_URI>/onde-backend:v1.1
 
-# manifests/ 폴더에서 이미지 태그 수정 후 Git Push
-# → Argo CD가 자동 감지하여 무중단 배포 실행
+# EC2에서 최신 이미지로 컨테이너 재시작
+# GitHub Actions가 자동으로 처리하거나, SSM Session Manager를 통해 수동 실행
+docker pull <ECR_URI>/onde-backend:v1.1
+docker stop onde-backend && docker rm onde-backend
+docker run -d --name onde-backend <ECR_URI>/onde-backend:v1.1
 ```
 
 ---
@@ -439,7 +453,6 @@ docker push <ECR_URI>/onde-backend:v1.1
 | Java / Gradle | 백엔드 빌드 시 필요 |
 | Docker | 컨테이너 빌드 및 실행 |
 | Terraform | v1.5+ 권장 |
-| kubectl | Kubernetes 클러스터 관리 |
 | AWS CLI | AWS 리소스 접근 |
 | AWS 계정 | 적절한 IAM 권한 필요 |
 
