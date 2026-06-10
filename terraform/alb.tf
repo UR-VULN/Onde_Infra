@@ -87,7 +87,7 @@ resource "aws_lb_target_group" "backend" {
     path                = "/api/v1/health" # 백엔드 API 헬스 체크 경로
     port                = "8080"
     protocol            = "HTTP"
-    matcher             = "200"
+    matcher             = "200,401"
     interval            = 30
     timeout             = 5
     healthy_threshold   = 3
@@ -204,7 +204,7 @@ resource "aws_lb_listener_rule" "admin_api" {
 
   condition {
     path_pattern {
-      values = ["/admin/*"]
+      values = ["/api/v1/admin/*"]
     }
   }
 }
