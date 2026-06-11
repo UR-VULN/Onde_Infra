@@ -46,20 +46,20 @@ output "database_subnet_ids" {
 
 #── RDS ────────────────────────────────────────────────────────────────────
 
-# output "rds_endpoint" {
-#   description = "RDS 엔드포인트 (애플리케이션 DB 연결 주소)"
-#   value       = aws_db_instance.main.endpoint
-# }
+output "rds_endpoint" {
+  description = "RDS 엔드포인트 (애플리케이션 DB 연결 주소)"
+  value       = aws_db_instance.main.endpoint
+}
 
-# output "rds_port" {
-#   description = "RDS 포트"
-#   value       = aws_db_instance.main.port
-# }
+output "rds_port" {
+  description = "RDS 포트"
+  value       = aws_db_instance.main.port
+}
 
-# output "rds_database_name" {
-#   description = "RDS 초기 데이터베이스 이름"
-#   value       = aws_db_instance.main.db_name
-# }
+output "rds_database_name" {
+  description = "RDS 초기 데이터베이스 이름"
+  value       = aws_db_instance.main.db_name
+}
 
 # ── S3 ─────────────────────────────────────────────────────────────────────
 

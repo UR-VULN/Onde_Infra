@@ -56,6 +56,21 @@ resource "aws_cloudtrail" "onde_trail" {
   # CloudWatch Logs 연동
   cloud_watch_logs_group_arn = "${aws_cloudwatch_log_group.cloudtrail.arn}:*"
   cloud_watch_logs_role_arn  = aws_iam_role.cloudtrail_role.arn
+
+  # S3 데이터 이벤트 로그 수집 (이미지 버킷 및 배포 버킷 모니터링)
+  event_selector {
+    read_write_type           = "All"
+    include_management_events = true
+
+    data_resource {
+      type   = "AWS::S3::Object"
+      values = [
+        "${aws_s3_bucket.travel_image.arn}/",
+        "${aws_s3_bucket.deploy.arn}/"
+      ]
+    }
+  }
+
   tags = {
     Name    = "onde-cloudtrail"
     Project = "onde"
