@@ -107,7 +107,7 @@ resource "aws_lb_target_group" "backend_windows" {
   vpc_id   = aws_vpc.main.id
 
   health_check {
-    path                = "/api/v1/admin/health/readiness" # 어드민 모듈 헬스 체크 경로
+    path                = "/api/v1/admin/health" # 어드민 모듈 헬스 체크 경로
     port                = "8081"
     protocol            = "HTTP"
     matcher             = "200"
