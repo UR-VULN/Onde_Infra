@@ -162,22 +162,40 @@ resource "aws_lb_target_group_attachment" "backend_windows" {
 # 리스너 및 라우팅 규칙
 # ────────────────────────────────────────────────────────────────────────────
 
-# 6. HTTP(80) 리스너 — 기본 규칙: 프론트엔드로 전달
+# 6. HTTP(80) 리스너 — 모든 HTTP 요청을 HTTPS(443)로 자동 리다이렉트
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
   protocol          = "HTTP"
 
-  # 기본 규칙: 프론트엔드로 전달
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+
+# 6-1. HTTPS(443) 리스너 — ACM 인증서 적용 및 기본 프론트엔드 전달
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09"
+  certificate_arn   = "arn:aws:acm:ap-northeast-2:802314158104:certificate/af5aa518-8f74-4269-87df-4c46fdb7ae46"
+
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.frontend.arn
   }
 }
 
-# 6-1. Linux 백엔드 라우팅 규칙 (Path-based Routing): /api/* 요청은 백엔드로 전달
+# 6-2. Linux 백엔드 라우팅 규칙 (Path-based Routing): /api/* 요청은 백엔드로 전달
 resource "aws_lb_listener_rule" "api" {
-  listener_arn = aws_lb_listener.http.arn # ALB의 HTTP 리스너 ARN 참조
+  listener_arn = aws_lb_listener.https.arn # HTTPS 리스너 ARN 참조
   priority     = 10                       # 기본 규칙보다 높은 우선순위로 설정
 
   action {
@@ -192,9 +210,9 @@ resource "aws_lb_listener_rule" "api" {
   }
 }
 
-# 6-2. Windows 관리자 API 라우팅: /admin/* → Windows 백엔드 TG (priority 20) ── [추가]
+# 6-3. Windows 관리자 API 라우팅: /admin/* → Windows 백엔드 TG (priority 20)
 resource "aws_lb_listener_rule" "admin_api" {
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.https.arn # HTTPS 리스너 ARN 참조
   priority     = 5
 
   action {
