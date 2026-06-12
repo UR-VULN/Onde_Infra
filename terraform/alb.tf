@@ -205,7 +205,7 @@ resource "aws_lb_listener_rule" "api" {
 
   condition {
     path_pattern {
-      values = ["/api/*", "/oauth2/*", "/login/oauth2/*"]
+      values = ["/api/*", "/oauth2/authorization/*", "/login/oauth2/*"]
     }
   }
 }
