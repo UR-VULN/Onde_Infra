@@ -362,11 +362,14 @@ resource "aws_instance" "backend_windows" {
 
   user_data = <<-EOF
     <powershell>
-    # Java 17 설치
+    # Java 17 설치 (Amazon Corretto)
     Invoke-WebRequest `
-      -Uri "https://download.java.net/java/GA/jdk17/0d483333a00540d886ef971a00022282/35/GPL/openjdk-17_windows-x64_bin.zip" `
+      -Uri "https://corretto.aws/downloads/latest/amazon-corretto-17-x64-windows-jdk.zip" `
       -OutFile "$env:TEMP\jdk17.zip"
-    Expand-Archive "$env:TEMP\jdk17.zip" -DestinationPath "C:\Program Files\Java"
+    Expand-Archive "$env:TEMP\jdk17.zip" -DestinationPath "C:\Program Files\Java" -Force
+    $extracted = Get-ChildItem "C:\Program Files\Java" | Where-Object { $_.PSIsContainer } | Select-Object -First 1
+    Rename-Item -Path $extracted.FullName -NewName "jdk-17" -Force
+
     [System.Environment]::SetEnvironmentVariable("JAVA_HOME", "C:\Program Files\Java\jdk-17", "Machine")
     [System.Environment]::SetEnvironmentVariable("Path", "$env:Path;C:\Program Files\Java\jdk-17\bin", "Machine")
 
