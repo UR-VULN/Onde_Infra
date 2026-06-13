@@ -133,7 +133,7 @@ jobs:
             --parameters commands="[
               \"aws s3 cp s3://${{ secrets.DEPLOY_BUCKET }}/admin/admin-module-$IMAGE_TAG.jar C:\\\\app\\\\admin-module.jar\",
               \"Stop-Process -Name java -Force -ErrorAction SilentlyContinue\",
-              \"Start-Process java -ArgumentList '-jar C:\\\\app\\\\admin-module.jar' -NoNewWindow\"
+              \"\$env:DB_URL='${{ secrets.DB_URL }}'; \$env:DB_USERNAME='${{ secrets.DB_USERNAME }}'; \$env:DB_PASSWORD='${{ secrets.DB_PASSWORD }}'; \$env:REDIS_HOST='${{ secrets.REDIS_HOST }}'; \$env:REDIS_PORT='${{ secrets.REDIS_PORT }}'; \$env:AWS_S3_BUCKET='${{ secrets.AWS_S3_BUCKET }}'; \$env:AWS_CLOUDFRONT_DOMAIN='${{ secrets.AWS_CLOUDFRONT_DOMAIN }}'; \$env:JWT_SECRET='${{ secrets.JWT_SECRET }}'; \$env:AWS_REGION='${{ env.AWS_REGION }}'; Start-Process java -ArgumentList '-jar C:\\\\app\\\\admin-module.jar' -NoNewWindow\"
             ]" \
             --comment "Deploy admin $IMAGE_TAG" \
             --query 'Command.CommandId' \
