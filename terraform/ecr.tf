@@ -103,10 +103,6 @@ output "ecr_backend_repository_url" {
   value       = aws_ecr_repository.backend.repository_url
 }
 
-output "ecr_backend_admin_repository_url" {
-  description = "관리자 백엔드 ECR 리포지토리 URL"
-  value       = aws_ecr_repository.backend_admin.repository_url
-}
 
 output "ecr_login_command" {
   description = "ECR 도커 로그인 명령어"

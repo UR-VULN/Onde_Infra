@@ -17,8 +17,6 @@ resource "aws_cloudwatch_metric_alarm" "frontend_cpu" {
   statistic           = "Average"
   threshold           = 80 # CPU 80% 초과 시 알람
   alarm_description   = "Frontend EC2 CPU 사용률이 80%를 초과했습니다."
-  alarm_actions       = [aws_sns_topic.alarm.arn]
-  ok_actions          = [aws_sns_topic.alarm.arn]
 
   dimensions = {
     InstanceId = aws_instance.frontend.id
@@ -44,8 +42,6 @@ resource "aws_cloudwatch_metric_alarm" "backend1_cpu" {
   statistic           = "Average"
   threshold           = 80
   alarm_description   = "Backend-1 EC2 CPU 사용률이 80%를 초과했습니다."
-  alarm_actions       = [aws_sns_topic.alarm.arn]
-  ok_actions          = [aws_sns_topic.alarm.arn]
 
   dimensions = {
     InstanceId = aws_instance.backend_1.id
@@ -71,8 +67,6 @@ resource "aws_cloudwatch_metric_alarm" "backend2_cpu" {
   statistic           = "Average"
   threshold           = 80
   alarm_description   = "Backend-2 EC2 CPU 사용률이 80%를 초과했습니다."
-  alarm_actions       = [aws_sns_topic.alarm.arn]
-  ok_actions          = [aws_sns_topic.alarm.arn]
 
   dimensions = {
     InstanceId = aws_instance.backend_2.id
@@ -98,8 +92,6 @@ resource "aws_cloudwatch_metric_alarm" "windows_cpu" {
   statistic           = "Average"
   threshold           = 80
   alarm_description   = "Windows Backend EC2 CPU 사용률이 80%를 초과했습니다."
-  alarm_actions       = [aws_sns_topic.alarm.arn]
-  ok_actions          = [aws_sns_topic.alarm.arn]
 
   dimensions = {
     InstanceId = aws_instance.backend_windows.id
@@ -125,8 +117,6 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu" {
   statistic           = "Average"
   threshold           = 80
   alarm_description   = "RDS CPU 사용률이 80%를 초과했습니다."
-  alarm_actions       = [aws_sns_topic.alarm.arn]
-  ok_actions          = [aws_sns_topic.alarm.arn]
 
   dimensions = {
     DBInstanceIdentifier = aws_db_instance.main.id
@@ -148,7 +138,6 @@ resource "aws_cloudwatch_metric_alarm" "rds_storage" {
   statistic           = "Average"
   threshold           = 5368709120 # 5GB (bytes 단위)
   alarm_description   = "RDS 여유 스토리지가 5GB 미만입니다."
-  alarm_actions       = [aws_sns_topic.alarm.arn]
 
   dimensions = {
     DBInstanceIdentifier = aws_db_instance.main.id
@@ -170,7 +159,6 @@ resource "aws_cloudwatch_metric_alarm" "rds_connections" {
   statistic           = "Average"
   threshold           = 100 # 연결 수 100 초과 시 알람
   alarm_description   = "RDS 데이터베이스 연결 수가 100을 초과했습니다."
-  alarm_actions       = [aws_sns_topic.alarm.arn]
 
   dimensions = {
     DBInstanceIdentifier = aws_db_instance.main.id
@@ -196,7 +184,6 @@ resource "aws_cloudwatch_metric_alarm" "redis_cpu" {
   statistic           = "Average"
   threshold           = 80
   alarm_description   = "Redis CPU 사용률이 80%를 초과했습니다."
-  alarm_actions       = [aws_sns_topic.alarm.arn]
 
   dimensions = {
     CacheClusterId = aws_elasticache_replication_group.main.id
@@ -218,7 +205,6 @@ resource "aws_cloudwatch_metric_alarm" "redis_memory" {
   statistic           = "Average"
   threshold           = 80 # 메모리 80% 초과 시 알람
   alarm_description   = "Redis 메모리 사용률이 80%를 초과했습니다."
-  alarm_actions       = [aws_sns_topic.alarm.arn]
 
   dimensions = {
     CacheClusterId = aws_elasticache_replication_group.main.id
@@ -243,7 +229,6 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
   statistic           = "Sum"
   threshold           = 10 # 1분 내 5XX 에러 10회 초과 시 알람
   alarm_description   = "ALB 5XX 오류가 분당 10회를 초과했습니다."
-  alarm_actions       = [aws_sns_topic.alarm.arn]
   treat_missing_data  = "notBreaching" # 데이터 없으면 정상으로 간주
 
   dimensions = {
@@ -266,7 +251,6 @@ resource "aws_cloudwatch_metric_alarm" "alb_response_time" {
   statistic           = "Average"
   threshold           = 3 # 응답 시간 3초 초과 시 알람
   alarm_description   = "ALB 평균 응답 시간이 3초를 초과했습니다."
-  alarm_actions       = [aws_sns_topic.alarm.arn]
   treat_missing_data  = "notBreaching"
 
   dimensions = {
