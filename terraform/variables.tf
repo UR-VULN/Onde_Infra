@@ -81,10 +81,3 @@ variable "db_password" {
   type        = string
   sensitive   = true # terraform output 및 로그에 출력되지 않음
 }
-
-# ── SNS ────────────────────────────────────────────────────────────────────
-variable "operator_email" {
-  description = "운영자 알림 수신 이메일 주소"
-  type        = string
-  default     = "your-email@example.com" # TODO: GitHub Secrets의 OPERATOR_EMAIL로 교체 필요
-}

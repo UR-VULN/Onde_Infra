@@ -3,17 +3,6 @@
 # 모니터링 대상: EC2(Frontend/Backend), RDS, Redis, ALB
 # ────────────────────────────────────────────────────────────────────────────
 
-# ── SNS 토픽 (알람 수신용) ───────────────────────────────────────────────────
-
-resource "aws_sns_topic" "alarm" {
-  name = "${var.project_name}-alarm-topic"
-
-  tags = {
-    Name    = "${var.project_name}-alarm-topic"
-    Project = var.project_name
-  }
-}
-
 # ────────────────────────────────────────────────────────────────────────────
 # EC2 알람 — Frontend
 # ────────────────────────────────────────────────────────────────────────────
@@ -379,11 +368,6 @@ resource "aws_cloudwatch_dashboard" "main" {
 }
 
 # ── Outputs ─────────────────────────────────────────────────────────────────
-
-output "sns_alarm_topic_arn" {
-  description = "알람 SNS 토픽 ARN (이메일 구독 설정 시 사용)"
-  value       = aws_sns_topic.alarm.arn
-}
 
 output "cloudwatch_dashboard_url" {
   description = "CloudWatch 대시보드 URL"

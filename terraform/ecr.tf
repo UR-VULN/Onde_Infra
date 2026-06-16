@@ -30,22 +30,6 @@ resource "aws_ecr_repository" "backend" {
   }
 }
 
-# ── 관리자 ECR 리포지토리 (admin-module → Windows EC2) ───────────────────────
-
-resource "aws_ecr_repository" "backend_admin" {
-  name                 = "${var.project_name}/backend-admin"
-  image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-
-  tags = {
-    Name    = "${var.project_name}-backend-admin-ecr"
-    Project = var.project_name
-  }
-}
-
 # ── 오래된 이미지 자동 삭제 정책 (최신 10개만 유지) ──────────────────────────
 
 resource "aws_ecr_lifecycle_policy" "frontend" {
@@ -82,22 +66,6 @@ resource "aws_ecr_lifecycle_policy" "backend" {
   })
 }
 
-resource "aws_ecr_lifecycle_policy" "backend_admin" {
-  repository = aws_ecr_repository.backend_admin.name
-
-  policy = jsonencode({
-    rules = [{
-      rulePriority = 1
-      description  = "최신 10개 이미지만 유지"
-      selection = {
-        tagStatus   = "any"
-        countType   = "imageCountMoreThan"
-        countNumber = 10
-      }
-      action = { type = "expire" }
-    }]
-  })
-}
 
 # ── EC2가 ECR에 접근할 수 있도록 IAM 정책 추가 ───────────────────────────────
 
