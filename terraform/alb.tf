@@ -185,7 +185,7 @@ resource "aws_lb_listener" "https" {
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09"
-  certificate_arn   = "arn:aws:acm:ap-northeast-2:802314158104:certificate/af5aa518-8f74-4269-87df-4c46fdb7ae46"
+  certificate_arn   = "arn:aws:acm:ap-northeast-2:802314158104:certificate/10c13f73-4bf5-4620-ae28-3e7cd6bb66eb"
 
   default_action {
     type             = "forward"
@@ -223,6 +223,35 @@ resource "aws_lb_listener_rule" "admin_api" {
   condition {
     path_pattern {
       values = ["/api/v1/admin/*"]
+    }
+  }
+}
+
+# 6-4. admin.onde.click 도메인의 루트(/) 접속 시 /admin/login으로 리다이렉트
+resource "aws_lb_listener_rule" "admin_root_redirect" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 3
+
+  action {
+    type = "redirect"
+
+    redirect {
+      path        = "/admin/login"
+      status_code = "HTTP_301"
+      protocol    = "HTTPS"
+      port        = "443"
+    }
+  }
+
+  condition {
+    host_header {
+      values = ["admin.onde.click"]
+    }
+  }
+
+  condition {
+    path_pattern {
+      values = ["/"]
     }
   }
 }
