@@ -46,6 +46,177 @@
 
 
 ---
+# Onde 전체 인프라 아키텍처 다이어그램
+
+```mermaid
+flowchart TB
+  user[User Browser]
+  adminUser[Admin Browser]
+  r53["Route 53
+onde.click A Alias
+admin.onde.click A Alias"]
+  acm["ACM Certificate
+onde.click"]
+  gha["GitHub Actions
+Build / Test / Docker Push"]
+  repo["GitHub Repositories
+Onde_Backend / Onde_Frontend / onde_infra"]
+
+  subgraph aws[AWS Cloud]
+    subgraph ecrs[ECR Repositories]
+      ecrFE["ECR onde/frontend
+React + Nginx 이미지"]
+      ecrBE["ECR onde/backend
+Spring Boot API 이미지"]
+      ecrAdmin["ECR onde/backend-admin
+Spring Boot Admin 이미지"]
+    end
+
+    subgraph vpc["VPC  10.0.0.0/16"]
+      igw[Internet Gateway]
+
+      subgraph public["Public Subnets 10.0.1.0/24 10.0.2.0/24  ap-northeast-2a 2c"]
+        alb["ALB onde-alb
+Internet-facing
+HTTP to HTTPS 301 Redirect
+HTTPS 443 ACM 인증서 적용"]
+        natEip["Elastic IP
+for NAT Gateway"]
+        nat["NAT Gateway
+단일 AZ public-1"]
+      end
+
+      subgraph private["Private Subnets 10.0.10.0/24 10.0.20.0/24  ap-northeast-2a 2c"]
+        fe["Frontend EC2  t3.small  Ubuntu 22.04
+Nginx React SPA 정적 서빙
+Public Subnet ALB에서만 접근"]
+        be1["Backend EC2-1  t3.small  Ubuntu 22.04
+Spring Boot API api-module port 8080
+Private Subnet ap-northeast-2a"]
+        be2["Backend EC2-2  t3.small  Ubuntu 22.04
+Spring Boot API api-module port 8080
+Private Subnet ap-northeast-2c"]
+        win["Windows EC2  t3.medium  Windows Server 2019
+Spring Boot Admin admin-module port 8081
+Private Subnet ap-northeast-2a"]
+      end
+
+      subgraph dbSubnet["DB Subnets 10.0.100.0/24 10.0.200.0/24  인터넷 차단 완전 격리"]
+        rds["RDS MariaDB 10.11  db.t3.small
+암호화 true  자동백업 7일
+감사로그 to CloudWatch  port 3306"]
+        redis["ElastiCache Redis 7  cache.t3.micro
+Replication Group  1 node  port 6379"]
+      end
+    end
+
+    subgraph storage[Storage]
+      s3Img["S3 onde-travel-image-bucket
+이미지 저장  버전관리  암호화
+퍼블릭 차단  CloudFront OAC만 허용"]
+      s3Trail["S3 onde-cloudtrail-logs
+CloudTrail 감사 로그 저장"]
+      s3Deploy["S3 onde-deploy-artifacts
+Windows EC2 배포 JAR 저장"]
+    end
+
+    cf["CloudFront Distribution
+S3 이미지 CDN  OAC 인증
+PriceClass_100  HTTPS 강제"]
+
+    secretsMgr["Secrets Manager
+onde-project/backend-*
+DB / JWT / OAuth / S3 / AES 등"]
+
+    ssm["SSM Session Manager
+EC2 키리스 접속  SSH 포트 없음"]
+
+    cw["CloudWatch
+RDS 감사 에러 로그
+ALB 액세스 메트릭
+EC2 CPU 네트워크 경보  SNS 알림"]
+
+    ct["CloudTrail
+API 호출 감사 로그
+to S3 cloudtrail-logs"]
+
+    iam["IAM Role  ec2-ssm-role
+SSM / ECR pull / S3 접근
+Secrets Manager 읽기"]
+  end
+
+  user -->|"HTTPS onde.click"| r53
+  adminUser -->|"HTTPS admin.onde.click"| r53
+  r53 -->|"A Alias to ALB DNS"| igw
+  igw <--> alb
+  acm -->|"HTTPS 리스너 인증서"| alb
+
+  alb -->|"onde.click /  default"| fe
+  alb -->|"onde.click /api/* /oauth2/*  priority 10"| be1
+  alb -->|"onde.click /api/* /oauth2/*  priority 10"| be2
+  alb -->|"admin.onde.click /api/v1/admin/*  priority 2"| win
+  alb -->|"admin.onde.click /  priority 3"| fe
+
+  be1 -->|"JDBC 3306"| rds
+  be2 -->|"JDBC 3306"| rds
+  win -->|"JDBC 3306"| rds
+
+  be1 -->|"Redis 6379"| redis
+  be2 -->|"Redis 6379"| redis
+  win -->|"Redis 6379"| redis
+
+  be1 -->|"S3 PutObject GetObject"| s3Img
+  be2 -->|"S3 PutObject GetObject"| s3Img
+
+  s3Img -->|"OAC 서명"| cf
+  cf -->|"이미지 CDN"| user
+
+  natEip --> nat
+  be1 & be2 & win -->|"NAT 경유 아웃바운드"| nat
+  nat --> igw
+
+  fe -->|"docker pull via NAT"| ecrFE
+  be1 & be2 -->|"docker pull via NAT"| ecrBE
+  win -->|"docker pull via NAT"| ecrAdmin
+
+  iam -->|"ec2 instance profile"| fe & be1 & be2 & win
+  be1 & be2 & win -->|"GetSecretValue"| secretsMgr
+  be1 & be2 & win -->|"keyless access"| ssm
+
+  rds -->|"감사 에러 로그"| cw
+  alb -->|"액세스 메트릭"| cw
+  ct -->|"API 감사 로그"| s3Trail
+
+  repo --> gha
+  gha -->|"docker push"| ecrFE & ecrBE & ecrAdmin
+  gha -->|"JAR upload"| s3Deploy
+  s3Deploy -->|"GetObject 배포"| win
+```
+
+---
+
+## 컴포넌트 요약
+
+| 컴포넌트 | 스펙 | 위치 | 역할 |
+|----------|------|------|------|
+| **ALB** | Application Load Balancer | Public Subnet | HTTPS 종단, Host/Path 기반 라우팅 |
+| **Frontend EC2** | t3.small Ubuntu 22.04 | Public Subnet | Nginx React SPA 서빙 |
+| **Backend EC2 x2** | t3.small Ubuntu 22.04 | Private Subnet 2AZ | Spring Boot API api-module |
+| **Windows EC2** | t3.medium Windows 2019 | Private Subnet | Spring Boot Admin admin-module :8081 |
+| **RDS MariaDB** | db.t3.small 10.11 | DB Subnet 격리 | 메인 데이터베이스 |
+| **ElastiCache Redis** | cache.t3.micro Redis 7 | DB Subnet | 세션/캐시 |
+| **S3 이미지** | - | 글로벌 | 여행 이미지 저장 |
+| **S3 CloudTrail** | - | 글로벌 | 감사 로그 저장 |
+| **S3 배포** | - | 글로벌 | Windows JAR 배포용 |
+| **CloudFront** | PriceClass_100 | 글로벌 | S3 이미지 CDN |
+| **ECR** | 3개 레포 | ap-northeast-2 | 도커 이미지 저장 |
+| **Secrets Manager** | onde-project/backend-* | ap-northeast-2 | 민감정보 관리 |
+| **CloudWatch** | - | ap-northeast-2 | 로그 / 메트릭 / 알람 |
+| **CloudTrail** | - | ap-northeast-2 | API 감사 |
+| **Route 53** | A Alias 계획 | 글로벌 | onde.click / admin.onde.click |
+| **ACM** | onde.click 인증서 | ap-northeast-2 | HTTPS 인증서 |
+
+---
 
 # Onde 도메인 분리 시퀀스 다이어그램
 
