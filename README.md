@@ -47,6 +47,73 @@
 
 ---
 
+# Onde 도메인 분리 시퀀스 다이어그램
+
+## 아키텍처 흐름
+
+```mermaid
+sequenceDiagram
+  participant Browser as Browser
+  participant R53 as Route 53
+  participant ALB as ALB (Host 헤더 분기)
+  participant FE as Frontend EC2 Nginx
+  participant BE as "Backend EC2 x2 Linux"
+  participant WIN as Windows EC2 Admin
+
+  Note over Browser,WIN: 일반 사용자 흐름 (onde.click)
+
+  Browser->>R53: GET https://onde.click/
+  R53-->>Browser: ALB DNS (A 레코드)
+  Browser->>ALB: GET https://onde.click/
+  Note right of ALB: Host: onde.click → Frontend TG
+  ALB->>FE: route /
+  FE-->>Browser: React static files (SPA)
+
+  Browser->>ALB: GET https://onde.click/api/v1/...
+  Note right of ALB: Host: onde.click + Path /api/* → Backend TG
+  ALB->>BE: route /api/v1/...
+  BE-->>Browser: JSON API response
+
+  Note over Browser,WIN: 관리자 흐름 (admin.onde.click)
+
+  Browser->>R53: GET https://admin.onde.click/
+  R53-->>Browser: 동일한 ALB DNS (A 레코드 추가)
+  Browser->>ALB: GET https://admin.onde.click/
+  Note right of ALB: Host: admin.onde.click → Frontend TG
+  ALB->>FE: route / (동일 Nginx)
+  FE-->>Browser: React SPA → /admin/login 페이지
+
+  Browser->>ALB: POST https://admin.onde.click/api/v1/admin/login
+  Note right of ALB: Host: admin.onde.click + Path /api/v1/admin/* → Windows TG
+  ALB->>WIN: route /api/v1/admin/...
+  WIN-->>Browser: Admin JWT response
+
+  Browser->>ALB: GET https://admin.onde.click/api/v1/admin/...
+  Note right of ALB: Host: admin.onde.click + Path /api/v1/admin/* → Windows TG
+  ALB->>WIN: 관리자 API 처리
+  WIN-->>Browser: JSON Admin API response
+```
+
+## ALB 라우팅 우선순위 요약
+
+| Priority | Host 조건 | Path 조건 | Target Group |
+|----------|-----------|-----------|--------------|
+| **2** | `admin.onde.click` | `/api/v1/admin/*` | Windows EC2 TG |
+| **3** | `admin.onde.click` | `*` (전체) | Frontend TG |
+| **10** | `onde.click` | `/api/*`, `/oauth2/*`, `/login/oauth2/*` | Linux Backend TG |
+| **default** | `onde.click` | `*` | Frontend TG |
+
+> 기존 priority 5 규칙(`onde.click`에서 `/api/v1/admin/*` 허용)은 **삭제** — admin API는 `admin.onde.click`으로만 접근 가능
+
+## Route 53 레코드
+
+| 도메인 | 타입 | 값 |
+|--------|------|-----|
+| `onde.click` | A (Alias) | ALB DNS (기존) |
+| `admin.onde.click` | A (Alias) | ALB DNS (동일, 신규 추가) |
+
+---
+
 ## 핵심 개념 설명
 
 인프라를 처음 접하는 팀원을 위해, 이 프로젝트에서 사용된 모든 기술과 개념을 설명합니다.
