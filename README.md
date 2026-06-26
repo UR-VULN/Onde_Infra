@@ -54,7 +54,7 @@ flowchart TB
   adminUser[Admin Browser]
   r53["Route 53
 onde.click A Alias
-admin.onde.click A Alias"]
+rookies.onde.click A Alias"]
   acm["ACM Certificate
 onde.click"]
   gha["GitHub Actions
@@ -146,7 +146,7 @@ Secrets Manager 읽기"]
   end
 
   user -->|"HTTPS onde.click"| r53
-  adminUser -->|"HTTPS admin.onde.click"| r53
+  adminUser -->|"HTTPS rookies.onde.click"| r53
   r53 -->|"A Alias to ALB DNS"| igw
   igw <--> alb
   acm -->|"HTTPS 리스너 인증서"| alb
@@ -154,8 +154,8 @@ Secrets Manager 읽기"]
   alb -->|"onde.click /  default"| fe
   alb -->|"onde.click /api/* /oauth2/*  priority 10"| be1
   alb -->|"onde.click /api/* /oauth2/*  priority 10"| be2
-  alb -->|"admin.onde.click /api/v1/admin/*  priority 2"| win
-  alb -->|"admin.onde.click /  priority 3"| fe
+  alb -->|"rookies.onde.click /api/v1/admin/*  priority 2"| win
+  alb -->|"rookies.onde.click /  priority 3"| fe
 
   be1 -->|"JDBC 3306"| rds
   be2 -->|"JDBC 3306"| rds
@@ -213,7 +213,7 @@ Secrets Manager 읽기"]
 | **Secrets Manager** | onde-project/backend-* | ap-northeast-2 | 민감정보 관리 |
 | **CloudWatch** | - | ap-northeast-2 | 로그 / 메트릭 / 알람 |
 | **CloudTrail** | - | ap-northeast-2 | API 감사 |
-| **Route 53** | A Alias 계획 | 글로벌 | onde.click / admin.onde.click |
+| **Route 53** | A Alias 계획 | 글로벌 | onde.click / rookies.onde.click |
 | **ACM** | onde.click 인증서 | ap-northeast-2 | HTTPS 인증서 |
 
 ---
@@ -245,22 +245,22 @@ sequenceDiagram
   ALB->>BE: route /api/v1/...
   BE-->>Browser: JSON API response
 
-  Note over Browser,WIN: 관리자 흐름 (admin.onde.click)
+  Note over Browser,WIN: 관리자 흐름 (rookies.onde.click)
 
-  Browser->>R53: GET https://admin.onde.click/
+  Browser->>R53: GET https://rookies.onde.click/
   R53-->>Browser: 동일한 ALB DNS (A 레코드 추가)
-  Browser->>ALB: GET https://admin.onde.click/
-  Note right of ALB: Host: admin.onde.click → Frontend TG
+  Browser->>ALB: GET https://rookies.onde.click/
+  Note right of ALB: Host: rookies.onde.click → Frontend TG
   ALB->>FE: route / (동일 Nginx)
   FE-->>Browser: React SPA → /admin/login 페이지
 
-  Browser->>ALB: POST https://admin.onde.click/api/v1/admin/login
-  Note right of ALB: Host: admin.onde.click + Path /api/v1/admin/* → Windows TG
+  Browser->>ALB: POST https://rookies.onde.click/api/v1/admin/login
+  Note right of ALB: Host: rookies.onde.click + Path /api/v1/admin/* → Windows TG
   ALB->>WIN: route /api/v1/admin/...
   WIN-->>Browser: Admin JWT response
 
-  Browser->>ALB: GET https://admin.onde.click/api/v1/admin/...
-  Note right of ALB: Host: admin.onde.click + Path /api/v1/admin/* → Windows TG
+  Browser->>ALB: GET https://rookies.onde.click/api/v1/admin/...
+  Note right of ALB: Host: rookies.onde.click + Path /api/v1/admin/* → Windows TG
   ALB->>WIN: 관리자 API 처리
   WIN-->>Browser: JSON Admin API response
 ```
@@ -269,19 +269,19 @@ sequenceDiagram
 
 | Priority | Host 조건 | Path 조건 | Target Group |
 |----------|-----------|-----------|--------------|
-| **2** | `admin.onde.click` | `/api/v1/admin/*` | Windows EC2 TG |
-| **3** | `admin.onde.click` | `*` (전체) | Frontend TG |
+| **2** | `rookies.onde.click` | `/api/v1/admin/*` | Windows EC2 TG |
+| **3** | `rookies.onde.click` | `*` (전체) | Frontend TG |
 | **10** | `onde.click` | `/api/*`, `/oauth2/*`, `/login/oauth2/*` | Linux Backend TG |
 | **default** | `onde.click` | `*` | Frontend TG |
 
-> 기존 priority 5 규칙(`onde.click`에서 `/api/v1/admin/*` 허용)은 **삭제** — admin API는 `admin.onde.click`으로만 접근 가능
+> 기존 priority 5 규칙(`onde.click`에서 `/api/v1/admin/*` 허용)은 **삭제** — admin API는 `rookies.onde.click`으로만 접근 가능
 
 ## Route 53 레코드
 
 | 도메인 | 타입 | 값 |
 |--------|------|-----|
 | `onde.click` | A (Alias) | ALB DNS (기존) |
-| `admin.onde.click` | A (Alias) | ALB DNS (동일, 신규 추가) |
+| `rookies.onde.click` | A (Alias) | ALB DNS (동일, 신규 추가) |
 
 ---
 

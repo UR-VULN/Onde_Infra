@@ -196,7 +196,7 @@ resource "aws_lb_listener" "https" {
 # 6-2. Linux 백엔드 라우팅 규칙 (Path-based Routing): /api/* 요청은 백엔드로 전달
 resource "aws_lb_listener_rule" "api" {
   listener_arn = aws_lb_listener.https.arn # HTTPS 리스너 ARN 참조
-  priority     = 10                       # 기본 규칙보다 높은 우선순위로 설정
+  priority     = 10                        # 기본 규칙보다 높은 우선순위로 설정
 
   action {
     type             = "forward"
@@ -227,7 +227,7 @@ resource "aws_lb_listener_rule" "admin_api" {
   }
 }
 
-# 6-4. admin.onde.click 도메인의 루트(/) 접속 시 /admin/login으로 리다이렉트
+# 6-4. rookies.onde.click 도메인의 루트(/) 접속 시 /admin/login으로 리다이렉트
 resource "aws_lb_listener_rule" "admin_root_redirect" {
   listener_arn = aws_lb_listener.https.arn
   priority     = 3
@@ -245,7 +245,7 @@ resource "aws_lb_listener_rule" "admin_root_redirect" {
 
   condition {
     host_header {
-      values = ["admin.onde.click"]
+      values = ["rookies.onde.click"]
     }
   }
 
