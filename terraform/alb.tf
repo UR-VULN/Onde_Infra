@@ -144,12 +144,12 @@ resource "aws_lb_target_group_attachment" "backend_1" {
   port             = 8080
 }
 
-# 5-3. Linux 백엔드 #2 연결
-resource "aws_lb_target_group_attachment" "backend_2" {
-  target_group_arn = aws_lb_target_group.backend.arn
-  target_id        = aws_instance.backend_2.id
-  port             = 8080
-}
+# # 5-3. Linux 백엔드 #2 연결
+# resource "aws_lb_target_group_attachment" "backend_2" {
+#   target_group_arn = aws_lb_target_group.backend.arn
+#   target_id        = aws_instance.backend_2.id
+#   port             = 8080
+# }
 
 # 5-4. Windows 백엔드 연결 ── [추가]
 resource "aws_lb_target_group_attachment" "backend_windows" {

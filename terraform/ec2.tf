@@ -168,30 +168,13 @@ resource "aws_security_group" "backend_ec2" {
   }
 }
 
-# AMI Data Source (우분투 22.04  조회)
-# ────────────────────────────────────────────────────────────────────────────
-
-data "aws_ami" "ubuntu" {
-  most_recent = true
-  owners      = ["099720109477"] # 우분투 공식 배포처(Canonical) 고유 ID
-
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
-  }
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
-
 # ────────────────────────────────────────────────────────────────────────────
 # EC2 Instances (Frontend & Backend)
 # ────────────────────────────────────────────────────────────────────────────
 
 # 1. Frontend EC2 (Nginx) - 퍼블릭 서브넷 배치, ALB를 통해서만 접근
 resource "aws_instance" "frontend" {
-  ami                    = data.aws_ami.ubuntu.id
+  ami                    = var.ubuntu_ami_id
   instance_type          = "t3.small"
   subnet_id              = aws_subnet.public[0].id # 첫 번째 퍼블릭 서브넷
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
@@ -226,7 +209,7 @@ resource "aws_instance" "frontend" {
 
 # 2. Backend EC2 #1 (Spring Boot) - 첫 번째 프라이빗 서브넷
 resource "aws_instance" "backend_1" {
-  ami                    = data.aws_ami.ubuntu.id
+  ami                    = var.ubuntu_ami_id
   instance_type          = "t3.small"               # Java 애플리케이션 권장 사양
   subnet_id              = aws_subnet.private[0].id # 첫 번째 프라이빗 서브넷
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
@@ -260,39 +243,39 @@ resource "aws_instance" "backend_1" {
 }
 
 # 3. Backend EC2 #2 (Spring Boot) - 두 번째 프라이빗 서브넷 (HA 분산)
-resource "aws_instance" "backend_2" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.small"
-  subnet_id              = aws_subnet.private[1].id # 두 번째 프라이빗 서브넷
-  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
-  vpc_security_group_ids = [aws_security_group.backend_ec2.id]
+# resource "aws_instance" "backend_2" {
+#   ami                    = var.ubuntu_ami_id
+#   instance_type          = "t3.small"
+#   subnet_id              = aws_subnet.private[1].id # 두 번째 프라이빗 서브넷
+#   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
+#   vpc_security_group_ids = [aws_security_group.backend_ec2.id]
 
-  user_data = <<-EOF
-  #!/bin/bash
-  apt-get update -y
-  apt-get install -y ca-certificates curl gnupg awscli
+#   user_data = <<-EOF
+#   #!/bin/bash
+#   apt-get update -y
+#   apt-get install -y ca-certificates curl gnupg awscli
 
-  install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  chmod a+r /etc/apt/keyrings/docker.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-  https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
-  | tee /etc/apt/sources.list.d/docker.list > /dev/null
+#   install -m 0755 -d /etc/apt/keyrings
+#   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+#   chmod a+r /etc/apt/keyrings/docker.gpg
+#   echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+#   https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+#   | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-  apt-get update -y
-  apt-get install -y docker-ce docker-ce-cli containerd.io
-  systemctl enable docker
-  systemctl start docker
+#   apt-get update -y
+#   apt-get install -y docker-ce docker-ce-cli containerd.io
+#   systemctl enable docker
+#   systemctl start docker
 
-  # SSM Agent 설치 및 활성화 보장
-  snap install amazon-ssm-agent --classic
-  systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
-  systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
-  EOF
-  tags = {
-    Name = "${var.project_name}-backend-2"
-  }
-}
+#   # SSM Agent 설치 및 활성화 보장
+#   snap install amazon-ssm-agent --classic
+#   systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
+#   systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
+#   EOF
+#   tags = {
+#     Name = "${var.project_name}-backend-2"
+#   }
+# }
 
 # 4. Backend EC2 (Window 서버)
 
@@ -335,25 +318,9 @@ resource "aws_security_group" "windows_ec2" {
   }
 }
 
-# Windows Server 2019 AMI 데이터 소스 정의
-data "aws_ami" "windows_2019" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["Windows_Server-2019-English-Full-Base-*"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
-
 # Windows Server 2019 인스턴스 생성
 resource "aws_instance" "backend_windows" {
-  ami                    = data.aws_ami.windows_2019.id
+  ami                    = var.windows_ami_id
   instance_type          = "t3.medium" # Windows Server 구동을 위한 최소 권장 스펙
   subnet_id              = aws_subnet.private[0].id # 👈 아키텍처 다이어그램에 따라 프라이빗 서브넷에 배치
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name

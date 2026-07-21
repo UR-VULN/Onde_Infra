@@ -57,26 +57,26 @@ resource "aws_cloudwatch_metric_alarm" "backend1_cpu" {
 # EC2 알람 — Backend #2
 # ────────────────────────────────────────────────────────────────────────────
 
-resource "aws_cloudwatch_metric_alarm" "backend2_cpu" {
-  alarm_name          = "${var.project_name}-backend2-cpu-high"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = 2
-  metric_name         = "CPUUtilization"
-  namespace           = "AWS/EC2"
-  period              = 120
-  statistic           = "Average"
-  threshold           = 80
-  alarm_description   = "Backend-2 EC2 CPU 사용률이 80%를 초과했습니다."
+# resource "aws_cloudwatch_metric_alarm" "backend2_cpu" {
+#   alarm_name          = "${var.project_name}-backend2-cpu-high"
+#   comparison_operator = "GreaterThanThreshold"
+#   evaluation_periods  = 2
+#   metric_name         = "CPUUtilization"
+#   namespace           = "AWS/EC2"
+#   period              = 120
+#   statistic           = "Average"
+#   threshold           = 80
+#   alarm_description   = "Backend-2 EC2 CPU 사용률이 80%를 초과했습니다."
 
-  dimensions = {
-    InstanceId = aws_instance.backend_2.id
-  }
+#   dimensions = {
+#     InstanceId = aws_instance.backend_2.id
+#   }
 
-  tags = {
-    Name    = "${var.project_name}-backend2-cpu-alarm"
-    Project = var.project_name
-  }
-}
+#   tags = {
+#     Name    = "${var.project_name}-backend2-cpu-alarm"
+#     Project = var.project_name
+#   }
+# }
 
 # ────────────────────────────────────────────────────────────────────────────
 # EC2 알람 — Windows Backend
@@ -285,7 +285,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           metrics = [
             ["AWS/EC2", "CPUUtilization", "InstanceId", aws_instance.frontend.id, { label = "Frontend" }],
             ["AWS/EC2", "CPUUtilization", "InstanceId", aws_instance.backend_1.id, { label = "Backend-1" }],
-            ["AWS/EC2", "CPUUtilization", "InstanceId", aws_instance.backend_2.id, { label = "Backend-2" }],
+            # ["AWS/EC2", "CPUUtilization", "InstanceId", aws_instance.backend_2.id, { label = "Backend-2" }],
             ["AWS/EC2", "CPUUtilization", "InstanceId", aws_instance.backend_windows.id, { label = "Backend-Windows" }]
           ]
           period = 120

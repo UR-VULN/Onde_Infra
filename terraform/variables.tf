@@ -81,3 +81,20 @@ variable "db_password" {
   type        = string
   sensitive   = true # terraform output 및 로그에 출력되지 않음
 }
+
+# ── EC2 AMI ────────────────────────────────────────────────────────────────
+# most_recent 데이터 소스 대신 고정 ID를 사용해, AWS가 새 AMI를 배포해도
+# 매번 terraform plan에서 기존 인스턴스가 replace되지 않도록 함.
+# AMI를 의도적으로 업그레이드하고 싶을 때만 이 값을 갱신할 것.
+
+variable "ubuntu_ami_id" {
+  description = "Frontend/Backend EC2용 Ubuntu 22.04 AMI ID (고정)"
+  type        = string
+  default     = "ami-0afe1fd15675c3f15"
+}
+
+variable "windows_ami_id" {
+  description = "Windows Backend EC2용 Windows Server 2019 AMI ID (고정)"
+  type        = string
+  default     = "ami-0d0bee43b3c20ea15"
+}
